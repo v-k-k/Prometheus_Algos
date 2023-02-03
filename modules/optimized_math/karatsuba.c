@@ -9,40 +9,6 @@
 #define limt 4  //when number of digits afe less than 'cutoff' program uses usual multipliaction method
 
 
-/*var x = "1685287499328328297814655639278583667919355849391453456921116729";
-  var y = "7114192848577754587969744626558571536728983167954552999895348492";
-  var _res = "11989460275519080564894036768322865785999566885539505969749975204962718118914971586072960191064507745920086993438529097266122668";
-              11989460275519080564894036768322865785999566885539505969749975204962718118914971586072960191064507745920086993438529097266122668
-public static class Karatsuba
-    {
-        private static string __one = "1";
-        private static char __zero = '0';
-
-        public static BigInteger MultTwoNums(string X, string Y)
-        {
-            string[] arr = { X, Y };
-            var n = arr.Max(val => val.Length);
-
-            var xMid = X.Length / 2;
-            var a = BigInteger.Parse(X.Substring(0, xMid));
-            var b = BigInteger.Parse(X.Substring(xMid, X.Length - xMid));
-
-            var yMid = Y.Length / 2;
-            var c = BigInteger.Parse(Y.Substring(0, yMid));
-            var d = BigInteger.Parse(Y.Substring(yMid, Y.Length - yMid));
-
-            var aC = a * c;
-            var bD = b * d;
-            var aPlusBcPlusD = (a + b) * (c + d);
-            var powN = __one + new String(__zero, n);
-            var powNdiv2 = __one + new String(__zero, n / 2);
-            var aCpow = BigInteger.Parse(powN) * aC;
-            var optimized = BigInteger.Parse(powNdiv2) * (aPlusBcPlusD - aC - bD);
-
-            return aCpow + optimized + bD;
-        }
-    }*/
-
 void multi(int *a, int *b, int *ret, int d) 
 {
     int i;
@@ -85,8 +51,8 @@ void multi(int *a, int *b, int *ret, int d)
 
 void carry(int *a, int d);
 void SimpleM(int *a, int *b, int *ret, int d);
-void getNum(int *a, int *d_a);
-void NumPrint(int *a, int d);
+void getNum(int *a, int *d_a, char x[]);
+char *stringify_result(int *a, int d);
 
 void SimpleM(int *a, int *b, int *ret, int d)   //function multiplying number in usual way
 {
@@ -122,20 +88,13 @@ void carry(int *a, int d)
    				//condition when number of digits are greater than max_digit.
 }
 
-void getNum(int *a, int *size_of_a) //simple function to take input in the array from the user and returing the size of the array if needed.
+void getNum(int *a, int *size_of_a, char x[])
 {				
     int c;
     int i;
-
     *size_of_a = 0;
-    while(1) {
-        c = getchar();
-        if(c == '\n' || c == EOF) break;
-        if(*size_of_a >= MAX) {
-            fprintf(stderr, "using only first %d digits\n", MAX);
-            while(c != '\n' && c != EOF)
-                c = getchar();
-        }
+    for (size_t j = 0; j < strlen(x); j++){
+        c = x[j];
         a[*size_of_a] = c - '0';
         ++(*size_of_a);
     }
@@ -144,17 +103,24 @@ void getNum(int *a, int *size_of_a) //simple function to take input in the array
         c = a[i], a[i] = a[*size_of_a - i - 1], a[*size_of_a - i - 1] = c;
 }
 
-void NumPrint(int *a, int d) //funnction to print the numbers
+char *stringify_result(int *a, int d)
 {					
     int i;
+    int n = 0; 
+
     for(i = d - 1; i > 0; i--) 
         if(a[i] != 0) break;
-    for(; i >= 0; i--) 
-        printf("%d", a[i]);
+
+    char *result = (char*)malloc(i * sizeof(char));
+        
+    for(; i >= 0; i--)
+        n += sprintf (&result[n], "%d", a[i]);
+        
+    return result;
 }
 
 
-void multiply(char* x, char* y){
+char *multiply(char* x, char* y){
     int a[MAX]; // first multiplicand
     int b[MAX]; // second multiplicand
     int res[3 * MAX]; // result
@@ -163,10 +129,8 @@ void multiply(char* x, char* y){
     int d; // maximum length
     int i; // counter
 
-	printf("Enter the first number:");
-	getNum(a, &size_of_a);
-    printf("\nEnter the second number:");
-    getNum(b, &size_of_b);
+	getNum(a, &size_of_a, x);
+    getNum(b, &size_of_b, y);
 
     // let d be the smallest power of 2 greater than size_of_a and size_of_b,
     // and zero out the rest of a and b.
@@ -180,25 +144,5 @@ void multiply(char* x, char* y){
         carry(res, 2 * d); // now do any carrying when simple multiplication is used
     }
 
-    printf("\nThe product of the two numbers is:");
-    NumPrint(res, 2 * d);
-}
-
-int calculate_sum(int arr[], size_t length)
-{
-    int sum = 0;
-    int i = 0;
-    for (i = 0; i < length; i++)
-        sum += arr[i];
-
-    return sum;
-}
-
-float calculate_mean(int arr[], size_t length)
-{
-    if(length == 0) // if length is 0, we can't calculate mean due to divide by zero error.
-        return 0;
-
-    int sum = calculate_sum(arr, length);
-    return (float)sum / length;
+    return stringify_result(res, 2 * d);
 }
