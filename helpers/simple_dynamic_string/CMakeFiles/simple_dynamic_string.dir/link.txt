@@ -1,0 +1,2 @@
+/usr/bin/ar.exe qc libsimple_dynamic_string.a CMakeFiles/simple_dynamic_string.dir/sds.c.o
+/usr/bin/ranlib.exe libsimple_dynamic_string.a
