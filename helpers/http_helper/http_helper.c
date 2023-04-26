@@ -13,23 +13,15 @@ struct MemoryStruct {
   size_t size;
 };
 
-// struct f_list {
-//     sds name;
-//     sds content;
-//     struct f_list* next;
-//     zip_int64_t entries;
-// };
-
-struct f_list* node_create(sds name, sds content, zip_int64_t entries) {
+struct f_list* node_create(sds name, sds content) {
     struct f_list* a = (struct f_list*)malloc(sizeof(struct f_list));
     a->name = name;
     a->content = content;
-    a->entries = entries;
     return a;
 }
 
-void list_add_front(struct f_list** old, sds name, sds content, zip_int64_t entries) {
-    struct f_list* node = node_create(name, content, entries);
+void list_add_front(struct f_list** old, sds name, sds content) {
+    struct f_list* node = node_create(name, content);
     node->next = *old;
     (*old) = node;
 }
@@ -39,7 +31,7 @@ size_t list_length(const struct f_list* list) {
     struct f_list* currentPtr = (struct f_list*)list;
     if (currentPtr != NULL) {
         len++;
-        while (currentPtr->next != NULL) {
+        while (currentPtr->next->content != NULL) {
             len++;
             currentPtr = currentPtr->next;
         }
@@ -61,18 +53,18 @@ void list_destroy(struct f_list* list) {
 struct f_list* list_last(struct f_list* list) {
     struct f_list* currentPtr = (struct f_list*)list;
     if (currentPtr != NULL) {
-        while (currentPtr->next != NULL) {
+        while (currentPtr->next->content != NULL) {
             currentPtr = currentPtr->next;
         }
     }
     return currentPtr;
 }
 
-void list_add_back(struct f_list** old, char* name, char* content, zip_int64_t entries) {
+void list_add_back(struct f_list** old, char* name, char* content) {
     if ((*old) == NULL)
-        list_add_front(old, name, content, entries);
+        list_add_front(old, name, content);
     else {
-        struct f_list* node = node_create(name, content, entries);
+        struct f_list* node = node_create(name, content);
         struct f_list* lst = list_last(*old);
         lst->next = node;
     }
@@ -96,27 +88,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
  
   return realsize;
 }
-
-
-/*int main2(void)
-{
-  CURLcode rc;
-  CURL *curl;
-
-  curl = curl_easy_init();
-  curl_easy_setopt(curl, CURLOPT_URL, "https://courses.prometheus.org.ua/assets/courseware/v1/b562f0c2309e30de66682f4fa0b447ef/c4x/KPI/Algorithms101/asset/data_examples_02.zip");
-  curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip");
-  curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-  rc = curl_easy_perform(curl);
-
-  curl_easy_cleanup(curl);
-
-  return (int) rc;
-}*/
  
-
 void get_zipped_files(struct f_list** file_list, char* source){
     CURL *curl;
     CURLcode res;
@@ -158,10 +130,8 @@ void get_zipped_files(struct f_list** file_list, char* source){
 
             // read how many files you've got in there
             zip_int64_t entries = zip_get_num_entries(zip, 0);
-
-            //struct f_list* pfile_list = { NULL };     // &&&&&&&&&&
-            //struct f_list** file_list = &pfile_list;  // &&&&&&&&&&
-            (*file_list)->entries = entries;
+            
+            //(*file_list)->entries = 0;
 
             // loop over the entries in the archive
             for(zip_int64_t idx = 0; idx < entries; ++idx) {
@@ -178,22 +148,26 @@ void get_zipped_files(struct f_list** file_list, char* source){
 
                 sds content = sdsempty();
                 
-                while((len = zip_fread(fp, buf, sizeof buf)) > 0) {
+                while((len = zip_fread(fp, buf, sizeof buf)) > 0) {//
                     buf[len] = '\0';
                     content = sdscat(content, buf);
+
+                    //printf(buf);
                 }
                 
-                list_add_front(file_list, sdsnew(fname), content, entries);
+                list_add_front(file_list, sdsnew(fname), content);
+
+                //printf("%s\n%s\n", fname, buf);
                 //sdsclear(content);
                 zip_fclose(fp); // close this file
             }
-            //zip_close(zip); // close the whole archive
+            zip_close(zip); // close the whole archive
 
             //struct f_list* file_list = { NULL };
         
-            /*printf("%lu bytes retrieved\n", (unsigned long)chunk.size);
-            printf("\n\n%" PRId64 "\n", entries);//chunk.memory);
-            printf("\n\nFUCK");*/
+            // printf("%lu bytes retrieved\n", (unsigned long)chunk.size);
+            // printf("\n\n%" PRId64 "\n", entries);//chunk.memory);
+            // printf("\n\nFUCK");
         }
     }
 
