@@ -1,0 +1,2 @@
+/usr/bin/ar.exe qc libpayload_extractors.a CMakeFiles/payload_extractors.dir/inversions.c.o
+/usr/bin/ranlib.exe libpayload_extractors.a

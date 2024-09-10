@@ -1,1 +1,0 @@
-/usr/bin/c++.exe -Wl,--enable-auto-import CMakeFiles/Prometheus_Algos.dir/main.c.o -o Prometheus_Algos.exe -Wl,--out-implib,libPrometheus_Algos.dll.a -Wl,--major-image-version,0,--minor-image-version,0  modules/optimized_math/liboptimized_math.a helpers/http_helper/libhttp_helper.a helpers/simple_dynamic_string/libsimple_dynamic_string.a -lcurl -llibzip lib/libgtest.a 

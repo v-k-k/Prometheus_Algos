@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc libhttp_helper.a CMakeFiles/http_helper.dir/http_helper.c.o
-/usr/bin/ranlib.exe libhttp_helper.a
