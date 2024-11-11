@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc liboptimized_math.a CMakeFiles/optimized_math.dir/karatsuba.c.o
-/usr/bin/ranlib.exe liboptimized_math.a

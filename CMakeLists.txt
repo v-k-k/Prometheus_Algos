@@ -19,16 +19,18 @@ add_subdirectory(tests)
 add_subdirectory(googletest)
 
 # Include directories
-#include_directories(${CURL_INCLUDE_DIRS})
+include_directories(${CURL_INCLUDE_DIRS})
 include_directories(${LIBZIP_INCLUDE_DIRS})
 include_directories(googletest/include)
 
 # Link the necessary libraries
 target_link_libraries(${PROJECT_NAME} 
+    tools 
     optimized_math 
+	sorting 
     zip_helper 
     simple_dynamic_string 
-    payload_extractors 
-    #${CURL_LIBRARIES} 
+    payload_extractors
+    ${CURL_LIBRARIES} 
     ${LIBZIP_LIBRARIES} 
     gtest)

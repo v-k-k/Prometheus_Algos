@@ -4,14 +4,7 @@
 #include <zip.h>
 #include <stdio.h>
 #include "../simple_dynamic_string/sds.h"
-
-struct f_list {
-    sds name;
-    sds content;
-    struct f_list* next;
-
-    void (*show_content)(struct f_list* head);
-};
+#include "../structs.h"
 
 void show(struct f_list* head);
 
