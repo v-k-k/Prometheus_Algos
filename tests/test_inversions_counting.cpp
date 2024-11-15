@@ -1,17 +1,17 @@
 #include <gtest/gtest.h>
+#include <unordered_map>
+#include <vector>
+#include <algorithm>
 
 extern "C"
 {
-#include "../modules/sorting/sorting.h"
 #include "../helpers/zip_helper/zip_helper.h"
-#include "../helpers/tools/utils.h"
-#include "../helpers/simple_dynamic_string/sds.h"
-#include "../helpers/payload_extractors/payload_extractors.h"
+#include "../modules/sorting/sorting.h"
 }
 
 TEST(test_inversions_counting, sorting)
 {
-    char* path = "../data/data_examples_02.zip";
+    const char* path = "../data/data_examples_02.zip";
     struct f_list* file_list = NULL;
     
     get_zipped_files(&file_list, path);
@@ -87,39 +87,89 @@ TEST(test_inversions_counting, sorting)
         targetX = targetX->next;
     }
 }
+/*"https://courses.prometheus.org.ua/assets/courseware/v1/c2ab5f7283f9767fb6bad4739237c13c/c4x/KPI/Algorithms101/asset/input_1000_100.txt";
+// Instantiate parameterized tests with different test cases.
+INSTANTIATE_TEST_SUITE_P(
+    Test100FilmsSequences, SplitInversionsCountingTest,
+    ::testing::Values(
+        TestParams{sdsnew("input_1000_100.txt"), 618, 1, 2368},
+        TestParams{sdsnew("input_1000_100.txt"), 951, 178, 2483}
+    )
+);*/
+/*
+// Fixture class for parameterized tests.
+class SplitInversionsCountingTest : public ::testing::TestWithParam<TestParams> {};
 
-// TEST(test_karatsuba, simple_arr)
-// {
-//     int arr[] = {1, 5, 4, 6, 7, 9, 8, 10, 2, 3};
-//     size_t n = sizeof(arr) / sizeof(arr[0]);
-//     float mean = calculate_mean(arr, n);
-//     EXPECT_FLOAT_EQ(mean, 5.5);
-// }
+// Parameterized test for counting split inversions.
+TEST_P(SplitInversionsCountingTest, CountInversions) {
+    const auto& params = GetParam();
+    char* test_data_source = "https://courses.prometheus.org.ua/assets/courseware/v1/9a95f1a8992d060eafde59c96919dede/c4x/KPI/Algorithms101/asset/input_1000_5.txt";
+    
+    int users, films;
+    int **users_films_ratings;
+    
+    parse_inversions_data(test_data_source, &users_films_ratings, &users, &films);        
 
-// TEST(test_karatsuba, empty_arr)
-// {
-//     int arr[] = {};
-//     float mean = calculate_mean(arr, 0);
-//     EXPECT_FLOAT_EQ(mean, 0);
-// }
-// TEST(test_karatsuba, all_negatives)
-// {
-//     int arr[] = {-1, -5, -4, -6, -7, -9, -8, -10, -2, -3};
-//     size_t n = sizeof(arr) / sizeof(arr[0]);
-//     float mean = calculate_mean(arr, n);
-//     EXPECT_FLOAT_EQ(mean, -5.5);
-// }
-// TEST(test_karatsuba, mix_negative_positive)
-// {
-//     int arr[] = {-1, -5, -4, 6, 7, 9, -8, -10, -2, -3};
-//     size_t n = sizeof(arr) / sizeof(arr[0]);
-//     float mean = calculate_mean(arr, n);
-//     EXPECT_FLOAT_EQ(mean, -1.1);
-// }
-// TEST(test_karatsuba, with_zeros)
-// {
-//     int arr[] = {-1, -5, -4, 0, 7, 9, 0, -10, -2, -3};
-//     size_t n = sizeof(arr) / sizeof(arr[0]);
-//     float mean = calculate_mean(arr, n);
-//     EXPECT_FLOAT_EQ(mean, -0.89999998);
-// }
+     ---------------------------
+    // Retrieve test samples and filter by `testKey` and `userIndex`
+    auto& testSamples = FiveFilmsTestSamples[params.testKey];
+    
+    // Extract `targetRate` for the `userIndex`
+    auto targetRateIt = std::find_if(
+        testSamples.begin(), testSamples.end(),
+        [userIndex = params.userIndex](const RateSample& item) { return item.Number == userIndex; });
+    
+    ASSERT_NE(targetRateIt, testSamples.end()) << "User index not found in test samples.";
+    auto targetRate = targetRateIt->Rate;
+
+    // Extract `usersRates` for users other than `userIndex`
+    std::unordered_map<int, std::vector<int>> usersRates;
+    for (const auto& sample : testSamples) {
+        if (sample.Number != params.userIndex) {
+            usersRates[sample.Number] = sample.Rate;
+        }
+    }
+
+    // Retrieve `relativeUserRate`
+    auto relativeUserRate = usersRates[params.relativeUserIndex];
+    
+    // Prepare `preparedUserRate`
+    std::vector<int> preparedUserRate;
+    for (size_t i = 0; i < relativeUserRate.size(); ++i) {
+        preparedUserRate.push_back(relativeUserRate[i] - targetRate[i]);
+    }
+
+    // Calculate the number of inversions
+    int calculatedUserInversions = SortIntAndCountInversions(preparedUserRate);
+
+    // Expectation
+    EXPECT_EQ(calculatedUserInversions, params.expectedUserInversions)
+        << "Sample \"" << params.testKey << "\"\n"
+        << "User " << params.userIndex << "\n"
+        << "Expected split inversions count " << params.expectedUserInversions << "\n"
+        << "Actual split inversions count " << calculatedUserInversions;
+        ----------------------------------------
+    int base_user_idx = params.userIndex - 1;
+    int cmp_user_idx = params.comparUserIndex - 1;
+
+    for (int i = 0; i < users; i++){
+      if (i == base_user_idx){
+        sort_with_corresponding(users_films_ratings, users, films, base_user_idx);
+        int calculatedUserInversions = count_inversions(users_films_ratings[cmp_user_idx], films, 0);
+        EXPECT_EQ(params.expectedUserInversions, calculatedUserInversions)
+            << "Sample \"" << params.testKey << "\"\n"
+            << "User " << params.userIndex << "\n"
+            << "Expected split inversions count " << params.expectedUserInversions << "\n"
+            << "Actual split inversions count " << calculatedUserInversions;
+      }
+    }
+}
+
+// Instantiate parameterized tests with different test cases.
+INSTANTIATE_TEST_SUITE_P(
+    TestFiveFilmsSequences, SplitInversionsCountingTest,
+    ::testing::Values(
+        TestParams{sdsnew("input_1000_5.txt"), 452, 100, 7},
+        TestParams{sdsnew("input_1000_5.txt"), 863, 29, 0}
+    )
+);*/

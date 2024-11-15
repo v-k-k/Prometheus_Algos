@@ -27,4 +27,12 @@ typedef struct {
     int *inversions;
 } ExpextedUserInversions;
 
+// Parameter structure for `TestFiveFilmsSequences`.
+struct TestParams {
+    sds testKey;
+    int userIndex;
+    int comparUserIndex;
+    int expectedUserInversions;
+};
+
 #endif

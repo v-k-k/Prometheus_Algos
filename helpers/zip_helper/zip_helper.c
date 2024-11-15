@@ -1,31 +1,4 @@
-//#include <curl/curl.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <zip.h>
 #include "zip_helper.h"
-#include "../simple_dynamic_string/sds.h"
-
-
-static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp){
-  size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
- 
-  char *ptr = realloc(mem->memory, mem->size + realsize + 1);
-  if(!ptr) {
-    /* out of memory! */
-    printf("not enough memory (realloc returned NULL)\n");
-    return 0;
-  }
- 
-  mem->memory = ptr;
-  memcpy(&(mem->memory[mem->size]), contents, realsize);
-  mem->size += realsize;
-  mem->memory[mem->size] = 0;
- 
-  return realsize;
-}
 
 struct f_list* node_create(sds name, sds content) {
     struct f_list* a = (struct f_list*)malloc(sizeof(struct f_list));
@@ -98,7 +71,7 @@ void show(struct f_list* head) {
     }
 }
  
-void get_zipped_files(struct f_list** file_list, char* source) {
+void get_zipped_files(struct f_list** file_list, const char* source) {
     zip_t *zip = zip_open(source, ZIP_RDONLY, NULL);
     if (!zip) {
         fprintf(stderr, "Failed to open ZIP file: %s\n", source);

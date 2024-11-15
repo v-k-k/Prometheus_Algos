@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project(Prometheus_Algos)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # Create the executable
 add_executable(${PROJECT_NAME} main.c)
 
@@ -25,12 +27,13 @@ include_directories(googletest/include)
 
 # Link the necessary libraries
 target_link_libraries(${PROJECT_NAME} 
+    simple_dynamic_string 
     tools 
+    http
+    payload_extractors
+    zip_helper 
     optimized_math 
 	sorting 
-    zip_helper 
-    simple_dynamic_string 
-    payload_extractors
     ${CURL_LIBRARIES} 
     ${LIBZIP_LIBRARIES} 
     gtest)
