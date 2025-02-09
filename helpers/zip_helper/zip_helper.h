@@ -14,4 +14,6 @@ void get_zipped_files(struct f_list**, const char*);
 
 size_t list_length(const struct f_list*);
 
+void list_destroy(struct f_list* list);
+
 #endif

@@ -45,22 +45,6 @@ static inline char sdsReqType(size_t string_size) {
  * shit
  * implementation */
 void sds_to_int_array(sds input, int **array, int *array_size) {
-/*int len = 0;
-   sscanf(input, "%*[^0-9]%n", &len);//count not-digits(The Number isn't negative)
-   char *p = input + len;
-   char *start = p;
-  int v, n = 0;
-   while(1 == sscanf(p, "%d%n", &v, &len)){
-       ++n;//count elements
-       p += len;
-   }
-   //int array[n];//or allocate by malloc(and free)
-   char *endp = NULL;
-   int i;
-   for(i = 0; i < n; ++i){
-       array[i] = strtol(start, &endp, 10);
-       start = endp + 1;
-   }*/
     int len = 0;
     int count = 0;
     char *p = input;

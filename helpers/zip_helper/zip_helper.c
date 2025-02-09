@@ -32,6 +32,8 @@ void list_destroy(struct f_list* list) {
     struct f_list* next;
     while (currentPtr != NULL) {
         next = currentPtr->next;
+        sdsfree(currentPtr->content);
+        free(currentPtr->name);
         free(currentPtr);
         currentPtr = next;
     }

@@ -10,3 +10,7 @@ Install the necessary:
 *cmake --build build --config Debug*
 *cd build*
 *ctest -V .*
+
+## To perform the memory leak check
+
+*valgrind --leak-check=full ./tests/runUnitTests*

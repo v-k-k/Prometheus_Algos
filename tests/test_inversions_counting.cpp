@@ -28,14 +28,22 @@ TEST(test_inversions_counting, sorting)
         if (real_tokens == NULL) {
             fprintf(stderr, "Memory allocation failed\n");
             sdsfreesplitres(tokens, count);  // Free tokens array before exiting
+            list_destroy(file_list);
+            return;
         }
 
-        // Filter out empty tokens
         for (j = 0; j < count; j++) {
-            if (sdslen(tokens[j]) > 0)       // Only consider non-empty tokens
-                real_tokens[real_t_count++] = tokens[j];
-             else
-                sdsfree(tokens[j]);            // Free empty tokens to avoid memory leak
+            if (sdslen(tokens[j]) > 0) 
+                real_tokens[real_t_count++] = tokens[j]; // Assign, don't copy!
+        }
+        
+        //Reallocate real_tokens to the exact size
+        real_tokens = (sds*)realloc(real_tokens, real_t_count * sizeof(sds));
+        if (real_tokens == NULL) {
+            fprintf(stderr, "Memory reallocation failed\n");
+            sdsfreesplitres(tokens, count);
+            list_destroy(file_list);
+            return;
         }
         
         // Split the sds string into an integer array    
@@ -49,11 +57,13 @@ TEST(test_inversions_counting, sorting)
         // Dynamically allocate and initialize each row
         int *arrays[users];
         MOVE_TO_LINE = users + 1;
+        free(int_row);
         for (PARSING_LINE++; PARSING_LINE < MOVE_TO_LINE; PARSING_LINE++){
             int_row = NULL;
             row_size = 0;
             sds_to_int_array(real_tokens[PARSING_LINE], &int_row, &row_size);
             arrays[PARSING_LINE - 1] = copy_without_first(int_row, films + 1);
+            free(int_row);
         }
     
         MOVE_TO_LINE += (PARSING_LINE - 1);
@@ -63,9 +73,8 @@ TEST(test_inversions_counting, sorting)
             int *expected_inversions[users - 1];
 
             for (PARSING_LINE++; PARSING_LINE < MOVE_TO_LINE; PARSING_LINE++){
-                int_row = NULL;
                 row_size = 0;
-                sds_to_int_array(real_tokens[PARSING_LINE], &expected_inversions[PARSING_LINE + users - 1 - MOVE_TO_LINE], &row_size);
+                sds_to_int_array(real_tokens[PARSING_LINE], &expected_inversions[PARSING_LINE + users - 1 - MOVE_TO_LINE], &row_size);                
             }
             
             int base = CURRENT_USER - 1;
@@ -73,19 +82,26 @@ TEST(test_inversions_counting, sorting)
             sort_with_corresponding(copy, users, films, base);
 
             for (int i = 0, j = 0; i < users; i++, j++){
-                if (i != base)
+                if (i != base){
                     EXPECT_EQ(expected_inversions[j][1], count_inversions(copy[i], films, 0));
+                    free(expected_inversions[j]);
+                }
                 else
                     j--;
             }
             MOVE_TO_LINE += users;
 
-            for (int i = 0; i < users; i++) 
-                free(copy[i]);    
+            for (int i = 0; i < users; i++)
+                free(copy[i]);
             free(copy);
         }
+        for (int i = 0; i < users; i++)
+            free(arrays[i]);
+        sdsfreesplitres(tokens, count);
+        free(real_tokens);
         targetX = targetX->next;
     }
+    list_destroy(file_list);
 }
 /*"https://courses.prometheus.org.ua/assets/courseware/v1/c2ab5f7283f9767fb6bad4739237c13c/c4x/KPI/Algorithms101/asset/input_1000_100.txt";
 // Instantiate parameterized tests with different test cases.

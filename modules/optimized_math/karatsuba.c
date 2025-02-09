@@ -104,17 +104,34 @@ void getNum(int *a, int *size_of_a, char x[])
 }
 
 char *stringify_result(int *a, int d)
-{					
+{
     int i;
     int n = 0; 
+    int required_size = 0;
+    
+    for(i = d - 1; i >= 0; i--) 
+        if(a[i] != 0 || i == 0) break;
+    
+    // Calculate the required size
+    for (int j = i; j >= 0; j--) {
+        int temp = a[j];
+        if (temp == 0) {
+            required_size += 1; // For the '0' character
+        } else {
+            required_size += snprintf(NULL, 0, "%d", a[j]); // Use snprintf to get the required length
+        }
+    }
+    required_size++; // Add 1 for the null terminator
 
-    for(i = d - 1; i > 0; i--) 
-        if(a[i] != 0) break;
+    char *result = (char *)malloc(required_size * sizeof(char));
+    if (result == NULL) {
+        perror("malloc failed"); // Handle malloc failure
+        exit(1);
+    }
 
-    char *result = (char*)malloc(i * sizeof(char));
-        
-    for(; i >= 0; i--)
-        n += sprintf (&result[n], "%d", a[i]);
+    for (; i >= 0; i--) 
+        n += sprintf(result + n, "%d", a[i]);
+    result[required_size - 1] = '\0'; // Ensure null termination (important!)
         
     return result;
 }
