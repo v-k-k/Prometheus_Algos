@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include <unordered_map>
-#include <vector>
 #include <algorithm>
+#include <string>
+#include <vector>
 
 extern "C"
 {
@@ -9,7 +10,7 @@ extern "C"
 #include "../modules/sorting/sorting.h"
 }
 
-TEST(test_inversions_counting, sorting)
+TEST(test_inversions_counting, basic)
 {
     const char* path = "../data/data_examples_02.zip";
     struct f_list* file_list = NULL;
@@ -103,89 +104,41 @@ TEST(test_inversions_counting, sorting)
     }
     list_destroy(file_list);
 }
-/*"https://courses.prometheus.org.ua/assets/courseware/v1/c2ab5f7283f9767fb6bad4739237c13c/c4x/KPI/Algorithms101/asset/input_1000_100.txt";
-// Instantiate parameterized tests with different test cases.
-INSTANTIATE_TEST_SUITE_P(
-    Test100FilmsSequences, SplitInversionsCountingTest,
-    ::testing::Values(
-        TestParams{sdsnew("input_1000_100.txt"), 618, 1, 2368},
-        TestParams{sdsnew("input_1000_100.txt"), 951, 178, 2483}
-    )
-);*/
-/*
-// Fixture class for parameterized tests.
-class SplitInversionsCountingTest : public ::testing::TestWithParam<TestParams> {};
 
-// Parameterized test for counting split inversions.
-TEST_P(SplitInversionsCountingTest, CountInversions) {
-    const auto& params = GetParam();
-    char* test_data_source = "https://courses.prometheus.org.ua/assets/courseware/v1/9a95f1a8992d060eafde59c96919dede/c4x/KPI/Algorithms101/asset/input_1000_5.txt";
-    
+
+class MainInversionsTest : public ::testing::TestWithParam<std::tuple<std::string, int, int, int>> {};
+
+TEST_P(MainInversionsTest, FiveFilms) {
+    // Retrieve test parameters
+    std::string DATA_SOURCE = std::get<0>(GetParam());
+    int CURRENT_USER = std::get<1>(GetParam());
+    int REL_USER = std::get<2>(GetParam());
+    int EXPECTED_INVERSIONS = std::get<3>(GetParam());
+
     int users, films;
     int **users_films_ratings;
-    
-    parse_inversions_data(test_data_source, &users_films_ratings, &users, &films);        
 
-     ---------------------------
-    // Retrieve test samples and filter by `testKey` and `userIndex`
-    auto& testSamples = FiveFilmsTestSamples[params.testKey];
-    
-    // Extract `targetRate` for the `userIndex`
-    auto targetRateIt = std::find_if(
-        testSamples.begin(), testSamples.end(),
-        [userIndex = params.userIndex](const RateSample& item) { return item.Number == userIndex; });
-    
-    ASSERT_NE(targetRateIt, testSamples.end()) << "User index not found in test samples.";
-    auto targetRate = targetRateIt->Rate;
+    parse_inversions_data(DATA_SOURCE.c_str(), &users_films_ratings, &users, &films);
+    char* TEST_NAME = fileNameFromUrl(DATA_SOURCE.c_str());
 
-    // Extract `usersRates` for users other than `userIndex`
-    std::unordered_map<int, std::vector<int>> usersRates;
-    for (const auto& sample : testSamples) {
-        if (sample.Number != params.userIndex) {
-            usersRates[sample.Number] = sample.Rate;
-        }
-    }
+    sort_with_corresponding(users_films_ratings, users, films, CURRENT_USER - 1);
 
-    // Retrieve `relativeUserRate`
-    auto relativeUserRate = usersRates[params.relativeUserIndex];
-    
-    // Prepare `preparedUserRate`
-    std::vector<int> preparedUserRate;
-    for (size_t i = 0; i < relativeUserRate.size(); ++i) {
-        preparedUserRate.push_back(relativeUserRate[i] - targetRate[i]);
-    }
+    int calculatedUserInversions = count_inversions(users_films_ratings[REL_USER - 1], films, 0);
 
-    // Calculate the number of inversions
-    int calculatedUserInversions = SortIntAndCountInversions(preparedUserRate);
-
-    // Expectation
-    EXPECT_EQ(calculatedUserInversions, params.expectedUserInversions)
-        << "Sample \"" << params.testKey << "\"\n"
-        << "User " << params.userIndex << "\n"
-        << "Expected split inversions count " << params.expectedUserInversions << "\n"
+    EXPECT_EQ(EXPECTED_INVERSIONS, calculatedUserInversions)
+        << "Sample \"" << TEST_NAME << "\"\n"
+        << "User " << CURRENT_USER << "\n"
+        << "Expected split inversions count " << EXPECTED_INVERSIONS << "\n"
         << "Actual split inversions count " << calculatedUserInversions;
-        ----------------------------------------
-    int base_user_idx = params.userIndex - 1;
-    int cmp_user_idx = params.comparUserIndex - 1;
-
-    for (int i = 0; i < users; i++){
-      if (i == base_user_idx){
-        sort_with_corresponding(users_films_ratings, users, films, base_user_idx);
-        int calculatedUserInversions = count_inversions(users_films_ratings[cmp_user_idx], films, 0);
-        EXPECT_EQ(params.expectedUserInversions, calculatedUserInversions)
-            << "Sample \"" << params.testKey << "\"\n"
-            << "User " << params.userIndex << "\n"
-            << "Expected split inversions count " << params.expectedUserInversions << "\n"
-            << "Actual split inversions count " << calculatedUserInversions;
-      }
-    }
 }
 
-// Instantiate parameterized tests with different test cases.
 INSTANTIATE_TEST_SUITE_P(
-    TestFiveFilmsSequences, SplitInversionsCountingTest,
+    InversionsParamTests, 
+    MainInversionsTest,
     ::testing::Values(
-        TestParams{sdsnew("input_1000_5.txt"), 452, 100, 7},
-        TestParams{sdsnew("input_1000_5.txt"), 863, 29, 0}
+        std::make_tuple("https://courses.prometheus.org.ua/assets/courseware/v1/9a95f1a8992d060eafde59c96919dede/c4x/KPI/Algorithms101/asset/input_1000_5.txt", 863, 29, 0),
+        std::make_tuple("https://courses.prometheus.org.ua/assets/courseware/v1/9a95f1a8992d060eafde59c96919dede/c4x/KPI/Algorithms101/asset/input_1000_5.txt", 452, 100, 7),
+        std::make_tuple("https://courses.prometheus.org.ua/assets/courseware/v1/c2ab5f7283f9767fb6bad4739237c13c/c4x/KPI/Algorithms101/asset/input_1000_100.txt", 618, 1, 2368),
+        std::make_tuple("https://courses.prometheus.org.ua/assets/courseware/v1/c2ab5f7283f9767fb6bad4739237c13c/c4x/KPI/Algorithms101/asset/input_1000_100.txt", 951, 178, 2483)
     )
-);*/
+);

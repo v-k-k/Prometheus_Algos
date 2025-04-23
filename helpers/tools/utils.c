@@ -1,6 +1,12 @@
 #include "utils.h"
 
 
+char* fileNameFromUrl(const char* url) {
+    // Find the last occurrence of '/'
+    const char* lastSlash = strrchr(url, '/');
+    return strdup(lastSlash + 1);
+}
+
 // Comparison function for qsort, which sorts based on values in ascending order
 int compare(const void *a, const void *b) {
     Element *elem1 = (Element *)a;

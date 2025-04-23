@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include "../structs.h"
 
+char* fileNameFromUrl(const char* url);
+
 void sort_with_corresponding(int **arrays, int rows, int cols, int N);
 
 int* copy_without_first(int* array, int size);

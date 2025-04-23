@@ -7,7 +7,7 @@
 #include "../http/http.h"
 
 
-static int parse_inversions_data(char *source_link, int ***arrays, int *users, int *films) {
+static int parse_inversions_data(const char *source_link, int ***arrays, int *users, int *films) {
     sds content = retrievePlainText(source_link);
 
     sds *tokens, *real_tokens;

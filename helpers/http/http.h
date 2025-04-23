@@ -5,7 +5,7 @@
 #include "../tools/utils.h"
 
 //sds retrievePlainText(char* url);
-static sds retrievePlainText(char* url){
+static sds retrievePlainText(const char* url){
     CURL *curl;
     CURLcode res;
 
