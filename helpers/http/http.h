@@ -26,8 +26,10 @@ static sds retrievePlainText(const char* url){
       res = curl_easy_perform(curl);
     }
     curl_easy_cleanup(curl);
+    sds result = sdsnew(chunk.memory);
+    free(chunk.memory); // Free the memory allocated for chunk
 
-    return sdsnew(chunk.memory);
+    return result;
 }
 
 #endif

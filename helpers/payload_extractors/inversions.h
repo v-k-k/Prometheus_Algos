@@ -23,11 +23,8 @@ static int parse_inversions_data(const char *source_link, int ***arrays, int *us
 
     // Filter out empty tokens
     for (j = 0; j < count; j++) {
-        if (sdslen(tokens[j]) > 0) {
-            real_tokens[real_t_count++] = tokens[j];
-        } else {
-            sdsfree(tokens[j]);
-        }
+        if (sdslen(tokens[j]) > 0) 
+            real_tokens[real_t_count++] = sdsnewlen(tokens[j], sdslen(tokens[j])); 
     }
 
     // Split the sds string into an integer array
@@ -37,6 +34,7 @@ static int parse_inversions_data(const char *source_link, int ***arrays, int *us
     sds_to_int_array(real_tokens[PARSING_LINE], &int_row, &row_size);
     *users = int_row[0];
     *films = int_row[1];
+    free(int_row); // Free the temporary int_row array
     
    // Allocate memory for the main array
     *arrays = (int**)malloc(*users * sizeof(int*));
@@ -53,6 +51,8 @@ static int parse_inversions_data(const char *source_link, int ***arrays, int *us
 
         // Copy elements to the inner array
         for (int i = 0; i < row_size; i++) {
+            if (i + 1 >= row_size) break;
+                
             (*arrays)[PARSING_LINE - 1][i] = int_row[i + 1];
         }
 
@@ -60,6 +60,7 @@ static int parse_inversions_data(const char *source_link, int ***arrays, int *us
     }
 
     sdsfreesplitres(real_tokens, real_t_count);
+    sdsfreesplitres(tokens, count);    
     sdsfree(content);
 
     return 0; // Indicate success

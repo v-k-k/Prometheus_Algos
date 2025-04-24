@@ -130,6 +130,14 @@ TEST_P(MainInversionsTest, FiveFilms) {
         << "User " << CURRENT_USER << "\n"
         << "Expected split inversions count " << EXPECTED_INVERSIONS << "\n"
         << "Actual split inversions count " << calculatedUserInversions;
+
+    // Assume 'users_films_ratings' was allocated as an array of integer pointers
+    for (int i = 0; i < users; i++) {
+        free(users_films_ratings[i]); // Free each user's film ratings array
+    }
+
+    free(users_films_ratings); // Free the array of pointers itself
+    free(TEST_NAME); // Free the filename string
 }
 
 INSTANTIATE_TEST_SUITE_P(
