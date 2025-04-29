@@ -1,14 +1,14 @@
 #include "zip_helper.h"
 
-struct f_list* node_create(sds name, sds content) {
+struct f_list* node_create(char* name, char* content) {
     struct f_list* a = (struct f_list*)malloc(sizeof(struct f_list));
-    a->name = name;
-    a->content = content;
+    a->name = sdsnew(name);
+    a->content = sdsnew(content);
     a->next = NULL;
     return a;
 }
 
-void list_add_front(struct f_list** old, sds name, sds content) {
+void list_add_front(struct f_list** old, char* name, char* content) {
     struct f_list* node = node_create(name, content);
     node->next = *old;
     (*old) = node;
@@ -33,7 +33,7 @@ void list_destroy(struct f_list* list) {
     while (currentPtr != NULL) {
         next = currentPtr->next;
         sdsfree(currentPtr->content);
-        free(currentPtr->name);
+        sdsfree(currentPtr->name);
         free(currentPtr);
         currentPtr = next;
     }

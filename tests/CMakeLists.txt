@@ -1,4 +1,4 @@
-add_executable("runUnitTests" test_karatsuba.cpp test_inversions_counting.cpp)
+add_executable("runUnitTests" test_karatsuba.cpp test_inversions_counting.cpp test_sorting.cpp)
 
 target_link_libraries("runUnitTests" PUBLIC 
     simple_dynamic_string

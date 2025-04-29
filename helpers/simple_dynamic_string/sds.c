@@ -41,9 +41,9 @@ static inline char sdsReqType(size_t string_size) {
 #endif
 }
 
-/* My beautiful
- * shit
- * implementation */
+/*
+ * Creates an array of arrays of integers from SDS string of integers
+ */
 void sds_to_int_array(sds input, int **array, int *array_size) {
     int len = 0;
     int count = 0;
@@ -82,6 +82,78 @@ void sds_to_int_array(sds input, int **array, int *array_size) {
 
     // Set the size of the array
     *array_size = count;
+}
+
+/* Check if SDS starts with PREFIX */
+int sdsstartswith(const sds s, const char *prefix) {
+    if (s == NULL || prefix == NULL) return 0;
+
+    size_t slen = sdslen(s);
+    size_t prefixlen = strlen(prefix);
+
+    if (prefixlen > slen) return 0;
+
+    return memcmp(s, prefix, prefixlen) == 0;
+}
+
+/*Check if SDS ends with SUFFIX*/
+int sdsendswith(const sds s, const char *suffix) {
+    /*
+    size_t str_len = sdslen(s);  // Get the length of the SDS string
+    size_t suffix_len = strlen(suffix);  // Get the length of the suffix
+
+    // If the suffix is longer than the string, it can't be a suffix
+    if (suffix_len > str_len) return 0; 
+    
+    return strncmp(s + str_len - suffix_len, suffix, suffix_len) == 0;*/
+    if (s == NULL || suffix == NULL) return 0;
+
+    size_t slen = sdslen(s);
+    size_t suffixlen = strlen(suffix);
+
+    if (suffixlen > slen) return 0;
+
+    return memcmp(s + (slen - suffixlen), suffix, suffixlen) == 0;
+}
+
+/*
+ * Converts an sds string to an integer.
+ *
+ * Args:
+ * a: The sds string to convert.
+ * b: A pointer to an integer where the result will be stored.
+ *
+ * Returns:
+ * 0 on success, -1 on failure (e.g., invalid format, out of range).
+ */
+int sdsToInt(const sds a, int *b) {
+    if (a == NULL || b == NULL) {
+        return -1;
+    }
+
+    char *endptr;
+    long val = strtol(a, &endptr, 10);
+
+    // Check for conversion errors
+    if (endptr == a) {
+        // No digits were found
+        return -1;
+    }
+    if (*endptr != '\0') {
+        // Extra characters after the number
+        return -1;
+    }
+    if ((val == LONG_MIN || val == LONG_MAX) && errno == ERANGE) {
+        // Overflow or underflow occurred
+        return -1;
+    }
+    if ((int)val != val) {
+        // Value is out of the range of int
+        return -1;
+    }
+
+    *b = (int)val;
+    return 0;
 }
 
 /* Create a new sds string with the content specified by the 'init' pointer

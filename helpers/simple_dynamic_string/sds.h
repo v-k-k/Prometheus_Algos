@@ -7,6 +7,7 @@ extern const char *SDS_NOINIT;
 #include <sys/types.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <errno.h>
 
 typedef char *sds;
 
@@ -185,6 +186,9 @@ static inline void sdssetalloc(sds s, size_t newlen) {
 }
 
 void sds_to_int_array(sds input, int **array, int *array_size);
+int sdsendswith(const sds s, const char *suffix);
+int sdsstartswith(const sds s, const char *prefix);
+int sdsToInt(const sds a, int *b);
 
 sds sdsnewlen(const void *init, size_t initlen);
 sds sdsnew(const char *init);
