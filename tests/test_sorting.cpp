@@ -38,8 +38,8 @@ TEST_P(TrainingQuickSortTest, Training) {
 
     for(int64_t idx = 0; idx < entries_count; ++idx){
         sds *input_tokens, *real_input_tokens, *output_tokens, *real_output_tokens;
-
-        if (sdsendswith(targetX->name, sdscatfmt(sdsempty(), "%i.txt", ARRAY_SIZE))) {
+        sds suffix = sdscatfmt(sdsempty(), "%i.txt", ARRAY_SIZE);
+        if (sdsendswith(targetX->name, suffix)) {
             int count, j, real_t_count = 0;
             if (sdsstartswith(targetX->name, "input")) {               
                 input_tokens = sdssplitlen(targetX->content, sdslen(targetX->content), "\n", 1, &count);
@@ -72,19 +72,14 @@ TEST_P(TrainingQuickSortTest, Training) {
                     << "ARRAY_SIZE = " << ARRAY_SIZE << "\n"
                     << "input_size = " << input_size;
 
-                for (j = 0; j < input_size; j++) {
+                for (j = 0; j < input_size; j++) 
                     if (sdsToInt(real_input_tokens[j + 1], &input_array[j]) != 0) return; 
-                }
+                
+                sdsfreesplitres(input_tokens, count);
+                free(real_input_tokens);
             }
             else {
                 output_tokens = sdssplitlen(targetX->content, sdslen(targetX->content), " ", 1, &count);
-                real_output_tokens = (sds *)malloc(count * sizeof(sds));
-                if (real_output_tokens == NULL) {
-                    fprintf(stderr, "Memory allocation failed\n");
-                    sdsfreesplitres(output_tokens, count);  // Free tokens array before exiting
-                    list_destroy(file_list);
-                    return;
-                }
                 
                 EXPECT_EQ(MODIFICATIONS, count)
                     << "MODIFICATIONS = " << MODIFICATIONS << "\n"
@@ -92,10 +87,14 @@ TEST_P(TrainingQuickSortTest, Training) {
 
                 for (j = 0; j < MODIFICATIONS; j++)
                     if (sdsToInt(output_tokens[j], &expected_comparisons[j]) != 0) return; 
+
+                sdsfreesplitres(output_tokens, count);
             }
         }        
         targetX = targetX->next;
+        sdsfree(suffix);
     }
+    list_destroy(file_list);
 
     // Check if the expected comparisons match the actual comparisons
     for (int i = 0; i < MODIFICATIONS; i++) {

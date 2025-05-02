@@ -5,6 +5,7 @@ struct f_list* node_create(char* name, char* content) {
     a->name = sdsnew(name);
     a->content = sdsnew(content);
     a->next = NULL;
+    free(name);
     return a;
 }
 
@@ -101,7 +102,7 @@ void get_zipped_files(struct f_list** file_list, const char* source) {
 
             // Add the file to the linked list
             list_add_back(file_list, strdup(file_name), content);
-
+            sdsfree(content);
             zip_fclose(zf);
         }
     }
