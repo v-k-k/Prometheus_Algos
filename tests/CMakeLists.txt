@@ -8,6 +8,8 @@ target_link_libraries("runUnitTests" PUBLIC
     optimized_math 
     sorting
     zip_helper  
+    sqlite_client
+    ${SQLITE3_LIBRARIES}
     ${CURL_LIBRARIES} 
     ${LIBZIP_LIBRARIES}
     gtest

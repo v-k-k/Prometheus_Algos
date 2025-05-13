@@ -1,7 +1,7 @@
 # Prometheus algorithms implemented in C with GoogleTest testing
 
 Install the necessary:
-*sudo apt install -y libzip-dev libcurl4-openssl-dev graphviz*
+*sudo apt install -y libzip-dev libcurl4-openssl-dev graphviz libsqlite3-dev*
 
 ## From Makefile
 

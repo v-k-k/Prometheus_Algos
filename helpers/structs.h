@@ -35,4 +35,39 @@ struct TestParams {
     int expectedUserInversions;
 };
 
+// Structure to represent a key-value pair (mimicking Dictionary<int, List<string>>)
+typedef struct {
+    int key;
+    char **values;
+    int value_count;
+} IntStringListPair;
+
+// Structure to represent a dictionary (mimicking Dictionary<int, List<string>>)
+typedef struct {
+    IntStringListPair *pairs;
+    int capacity;
+    int count;
+} IntStringListDictionary;
+
+// Structure to represent a string-integer pair (mimicking Dictionary<string, int>)
+typedef struct {
+    char *key;
+    int value;
+} StringIntPair;
+
+// Structure to represent a dictionary (mimicking Dictionary<string, int>)
+typedef struct {
+    StringIntPair *pairs;
+    int capacity;
+    int count;
+} StringIntDictionary;
+
+// Structure to represent a tuple of two string arrays (mimicking Tuple<string[], string[]>)
+typedef struct {
+    char **array1;
+    int array1_count;
+    char **array2;
+    int array2_count;
+} StringArrayTuple;
+
 #endif

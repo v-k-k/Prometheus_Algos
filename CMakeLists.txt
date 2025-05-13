@@ -28,6 +28,10 @@ find_package(CURL REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBZIP REQUIRED libzip)
 
+# Find SQLite3 library
+pkg_search_module(SQLITE3 REQUIRED sqlite3)
+#find_package(SQLite3 REQUIRED)
+
 # Create the executable
 add_executable(${PROJECT_NAME} main.c)
 
@@ -58,5 +62,7 @@ target_link_libraries(${PROJECT_NAME}
     zip_helper 
     optimized_math 
     sorting 
+    sqlite_client
+    ${SQLITE3_LIBRARIES}
     ${CURL_LIBRARIES} 
     ${LIBZIP_LIBRARIES})
