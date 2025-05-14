@@ -185,24 +185,22 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST(test_radix_sort, training)
 {
-    printf("Generating Test Data DB from %s...\n", SQL_FILE);
+    std::string DATA_SOURCE = "https://courses.prometheus.org.ua/assets/courseware/v1/c527b289b77bd5c7d2851ca728471685/c4x/KPI/Algorithms101/asset/anagrams.txt";
+    int count = 0;
+    sds content = retrievePlainText(DATA_SOURCE.c_str());
+    sds *input_tokens = sdssplitlen(content, sdslen(content), "\n", 1, &count);
+
+    // Generating Test Data DB from SQL_FILE
     generate_test_data_db();
-    printf("Test Data DB Generated.\n\n");
-
-    printf("Getting Letters Rate:\n");
+    
+    // Getting Letters Rate
     StringIntDictionary *letters_rate = get_letters_rate();
-    if (letters_rate) {
-        for (int i = 0; i < letters_rate->count; ++i) {
-            printf("Letter: %s, Rate: %d\n", letters_rate->pairs[i].key, letters_rate->pairs[i].value);
-        }
-        free_string_int_dictionary(letters_rate);
-    } else {
-        printf("Failed to get letters rate.\n");
-    }
-    printf("\n");
+    EXPECT_NE(letters_rate, nullptr) << "letters_rate should not be null after calling get_letters_rate()";
 
-    printf("Getting Strings Collections:\n");
+    // Getting Strings Collections
     StringArrayTuple *strings_collections = get_strings_collections();
+    EXPECT_NE(strings_collections, nullptr) << "strings_collections should not be null after calling get_strings_collections()";
+
     if (strings_collections) {
         printf("Base Strings:\n");
         for (int i = 0; i < strings_collections->array1_count; ++i) {
@@ -212,21 +210,80 @@ TEST(test_radix_sort, training)
         for (int i = 0; i < strings_collections->array2_count; ++i) {
             printf("- %s\n", strings_collections->array2[i]);
         }
-        free_string_array_tuple(strings_collections);
+        
     } else {
         printf("Failed to get strings collections.\n");
     }
     printf("\n");
 
-    printf("Getting Result Password:\n");
-    char *password = get_result_password();
-    if (password) {
-        printf("Result Password: %s\n", password);
-        free(password);
-    } else {
-        printf("Failed to get result password.\n");
+    // Getting Result Password
+    char *expected_password = get_result_password();
+    EXPECT_NE(expected_password, nullptr) << "expected_password should not be null after calling get_result_password()";
+
+    printf("\n\n\n2222222222222222\n\n\n");
+    char* original_strings[] = {"banana", "apple", "orange", "grape"};
+    int n_str = sizeof(original_strings) / sizeof(original_strings[0]);
+
+    // Dynamically allocate an array to hold modifiable strings
+    char** sample_str = (char**)malloc(n_str * sizeof(char*));
+    if (!sample_str) {
+        perror("Memory allocation failed");
+        exit(EXIT_FAILURE);
     }
+    // Copy original string data so it's modifiable
+    for (int i = 0; i < n_str; i++) {
+        sample_str[i] = strdup(original_strings[i]);
+        if (!sample_str[i]) {
+            perror("Memory allocation failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+    printf("Original string array: ");
+    for (int i = 0; i < n_str; i++) printf("%s ", sample_str[i]);
     printf("\n");
+    sort_strings(sample_str, n_str);
+    printf("Sorted string array: ");
+    for (int i = 0; i < n_str; i++) printf("%s ", sample_str[i]);
+    printf("\n");
+    // Free allocated memory
+    for (int i = 0; i < n_str; i++) free(sample_str[i]);
+    free(sample_str);
+    /*char** baseArray = (char**)malloc(sizeof(char*) * strings_collections->array1_count);
+    if (baseArray == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return;
+    }
+    for (int i = 0; i < strings_collections->array1_count; ++i) {
+        printf("%s\n", strings_collections->array1[i]);
+        baseArray[i] = (char*)malloc(strlen(strings_collections->array1[i]) + 1);
+        if (baseArray[i] == NULL) {
+            fprintf(stderr, "Memory allocation failed\n");
+            for (int j = 0; j < i; j++) free(baseArray[j]);
+            free(baseArray);
+            return;
+        }
+        strcpy(baseArray[i], strings_collections->array1[i]);
+    }
+    sort_strings(baseArray, count);
+
+    char* sample_str[] = {"banana", "apple", "orange", "grape"};
+    int n_str = sizeof(sample_str) / sizeof(sample_str[0]);
+    printf("Original string array: ");
+    for (int i = 0; i < n_str; i++) printf("%s ", sample_str[i]);
+    printf("\n");
+    sort_strings(sample_str, n_str);
+    printf("Sorted string array: ");
+    for (int i = 0; i < n_str; i++) printf("%s ", sample_str[i]);
+    printf("\n");
+
+    char* password = generate_password(sample_str, n_str);
+    printf("Generated password: %s\n", password);
+    free(password);
+    for (int i = 0; i < n_str; i++) free(sample_str[i]);*/
+
+    free_string_int_dictionary(letters_rate);
+    free_string_array_tuple(strings_collections);
+    free(expected_password);
 }
 /*{
     const char* path = "../data/data_examples_02.zip";
