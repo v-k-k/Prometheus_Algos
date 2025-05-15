@@ -1,8 +1,3 @@
-#include <math.h>
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "karatsuba.h"
 
 #define MAX 256  //number of elements in array

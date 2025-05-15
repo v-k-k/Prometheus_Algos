@@ -63,6 +63,7 @@ target_link_libraries(${PROJECT_NAME}
     optimized_math 
     sorting 
     sqlite_client
+    m
     ${SQLITE3_LIBRARIES}
     ${CURL_LIBRARIES} 
     ${LIBZIP_LIBRARIES})

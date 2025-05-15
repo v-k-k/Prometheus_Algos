@@ -9,8 +9,10 @@ target_link_libraries("runUnitTests" PUBLIC
     sorting
     zip_helper  
     sqlite_client
+    m
     ${SQLITE3_LIBRARIES}
     ${CURL_LIBRARIES} 
     ${LIBZIP_LIBRARIES}
     gtest
-    gtest_main)
+    gtest_main
+    gmock_main)

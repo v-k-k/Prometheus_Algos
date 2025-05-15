@@ -118,3 +118,62 @@ size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *user
  
   return realsize;
 }
+
+// Finds the single digit in an integer value by its digit-position
+int get_digit_by_position(int source_num, int position) {
+    int a = (int)(source_num % (int)pow(10, position));
+    int b = (int)(source_num % (int)pow(10, position - 1));
+    return (int)((a - b) / pow(10, position - 1));
+}
+
+char get_max_occurrence_character(sds *sample, int n) {
+    if (n == 0) return '\0';
+
+    int count_array[256] = {0}; // ASCII frequency array
+    int max_value = 0;
+    char result_char = '\0';
+
+    // Concatenate all SDS strings into one
+    sds str = sdsnew("");
+    for (int i = 0; i < n; i++) {
+        if (sample[i]) {
+            str = sdscat(str, sample[i]);
+        }
+    }
+
+    // Find the most occurring character
+    for (size_t i = 0; i < sdslen(str); i++) {
+        count_array[(unsigned char)str[i]]++;
+
+        if (count_array[(unsigned char)str[i]] > max_value) {
+            max_value = count_array[(unsigned char)str[i]];
+            result_char = str[i];
+        }
+    }
+
+    sdsfree(str);
+    return result_char;
+}
+
+sds generate_password(sds *sample, int n) {
+    if (n == 0) return sdsnew(""); // Return empty SDS string
+
+    char max_char = get_max_occurrence_character(sample, n);
+
+    // Create password using SDS functions
+    sds password = sdsnew(sample[0]); // Start with first string
+    password = sdscatlen(password, &max_char, 1); // Append most occurring character
+    password = sdscat(password, sample[n - 1]); // Append last string
+
+    return password;
+}
+
+void convertToSDS(char **baseArray, size_t numElements, sds *sdsArray) {
+    for (size_t i = 0; i < numElements; i++) {
+        if (baseArray[i]) {
+            sdsArray[i] = sdsnew(baseArray[i]); // Convert C string to SDS
+        } else {
+            sdsArray[i] = NULL;
+        }
+    }
+}
