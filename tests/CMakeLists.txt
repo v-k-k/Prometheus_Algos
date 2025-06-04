@@ -1,4 +1,4 @@
-add_executable("runUnitTests" test_karatsuba.cpp test_inversions_counting.cpp test_sorting.cpp)
+add_executable("runUnitTests" test_data_structures.cpp test_karatsuba.cpp test_inversions_counting.cpp test_sorting.cpp)
 
 target_link_libraries("runUnitTests" PUBLIC 
     simple_dynamic_string
@@ -7,6 +7,7 @@ target_link_libraries("runUnitTests" PUBLIC
     payload_extractors
     optimized_math 
     sorting
+    data_structures
     zip_helper  
     sqlite_client
     m

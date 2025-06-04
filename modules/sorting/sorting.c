@@ -45,12 +45,6 @@ int count_inversions(int arr[], int n, int start_idx) {
     return inversion_count;
 }
 
-void swap(int* a, int* b) {
-    int temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
 int getMedianElement(int array[], int start, int end) {
     int swapValueIndex;
     if (end - start + 1 == 2) {

@@ -1,6 +1,21 @@
 #include "utils.h"
 
 
+void swap(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void appendToPositiveIntArray(int* a, int n, int value) {
+    for (int i = 0; i < n; i++) {
+        if (a[i] == -1) { // Assuming -1 is used as a placeholder for empty slots
+            a[i] = value;
+            return;
+        }
+    }
+}
+
 char* fileNameFromUrl(const char* url) {
     // Find the last occurrence of '/'
     const char* lastSlash = strrchr(url, '/');
@@ -176,4 +191,44 @@ void convertToSDS(char **baseArray, size_t numElements, sds *sdsArray) {
             sdsArray[i] = NULL;
         }
     }
+}
+
+void IntArray_init(IntArray* arr) {
+    arr->array = NULL;
+    arr->size = 0;
+    arr->capacity = 0;
+}
+
+int IntArray_append(IntArray* arr, int value) {
+    if (arr->size >= arr->capacity) {
+        size_t new_capacity = (arr->capacity == 0) ? 4 : arr->capacity * 2;
+        int* new_array = (int*)realloc(arr->array, new_capacity * sizeof(int));
+        if (new_array == NULL) {
+            perror("Failed to reallocate memory for IntArray_append");
+            return -1; 
+        }
+        arr->array = new_array;
+        arr->capacity = new_capacity;
+    }
+    arr->array[arr->size] = value;
+    arr->size++;
+    return 0;
+}
+
+int IntArray_resize(IntArray* arr, size_t new_size) {
+    if (new_size > arr->capacity) {
+        fprintf(stderr, "Error: IntArray_resize attempting to increase size beyond capacity.\n");
+        return -1;
+    }
+    arr->size = new_size;
+    return 0;
+}
+
+void IntArray_destroy(IntArray* arr) {
+    if (arr->array != NULL) {
+        free(arr->array);
+        arr->array = NULL;
+    }
+    arr->size = 0;
+    arr->capacity = 0;
 }

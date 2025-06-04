@@ -62,6 +62,7 @@ target_link_libraries(${PROJECT_NAME}
     zip_helper 
     optimized_math 
     sorting 
+    data_structures
     sqlite_client
     m
     ${SQLITE3_LIBRARIES}

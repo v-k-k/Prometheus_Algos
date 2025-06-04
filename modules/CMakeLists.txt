@@ -1,2 +1,3 @@
 add_subdirectory(optimized_math)
 add_subdirectory(sorting)
+add_subdirectory(data_structures)

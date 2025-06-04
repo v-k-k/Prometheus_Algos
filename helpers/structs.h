@@ -70,4 +70,15 @@ typedef struct {
     int array2_count;
 } StringArrayTuple;
 
+typedef struct {
+    int* array;
+    size_t size;
+    size_t capacity;
+} IntArray;
+
+typedef struct {
+    IntArray Hlow; 
+    IntArray Hhigh; 
+} Heap;
+
 #endif
