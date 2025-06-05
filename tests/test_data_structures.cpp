@@ -110,30 +110,75 @@ INSTANTIATE_TEST_SUITE_P(
 TEST(test_main_heap_sort, main)
 {
     std::string DATA_SOURCE = "https://courses.prometheus.org.ua/assets/courseware/v1/7bfd7538f12aba38e8570c5f51b78648/c4x/KPI/Algorithms101/asset/input_16_10000.txt";
+    size_t EXP_ARRAY_SIZE = 10000;
+    size_t CH_1 = 2015;
+    int EM_1 = 4905;
+    size_t CH_2 = 9876;
+    int EM_2[] = {4994, 4995};
+    size_t HEAP_VALS_TO_CHECK = 5;
+
+    // Doublecheck the `AddElementAndFindMedian` because `EXP_HIGH` values are { 4905, 4959, 4918, 4978, 4969 }
+    int EXP_HIGH[] = {4905, 4959, 4918, 4989, 4969};
+    int EXP_LOW[] = {4900, 4833, 4893, 4817, 4824};
+
+    int input_array[EXP_ARRAY_SIZE];
     int count = 0;
+    int input_size = 0;
     sds content = retrievePlainText(DATA_SOURCE.c_str());
     sds *input_tokens = sdssplitlen(content, sdslen(content), "\n", 1, &count);
 
-    std::cout << "Input tokens count: " << count << std::endl;
-    /*std::vector<sds> EXPECTED_PASSWORDS = {sdsnew("aaolzzr"), sdsnew("aaojzzr")};
+    if (sdsToInt(input_tokens[0], &input_size) != 0) return;
+    EXPECT_EQ(EXP_ARRAY_SIZE, static_cast<size_t>(input_size))
+        << "ARRAY_SIZE = " << EXP_ARRAY_SIZE << "\n"
+        << "input_size = " << input_size;
 
-    sort_strings(input_tokens, count);
-    sds password = generate_password(input_tokens, count);
+    Heap my_median_finder_heap;
+    Heap_init(&my_median_finder_heap);
     
-    //EXPECT_THAT(EXPECTED_PASSWORDS, ::testing::Contains(password))
-    EXPECT_TRUE(std::any_of(EXPECTED_PASSWORDS.begin(), EXPECTED_PASSWORDS.end(),
-                        [&](const sds& stored_password) { return sdscmp(stored_password, password) == 0; }))
-    << "Password " << password << " not found in EXPECTED_PASSWORDS!";
+    IntArray current_medians; 
+    IntArray_init(&current_medians);
 
+    for (size_t i = 0; i < EXP_ARRAY_SIZE; i++) {
+        if (i == CH_1 - 1) {
+            for (size_t j = 0; j < HEAP_VALS_TO_CHECK; j++) {
+                EXPECT_EQ(my_median_finder_heap.Hhigh.array[j], EXP_HIGH[j])
+                    << "Checkpoint: " << CH_1 
+                    << "\nExpected EXP_HIGH[" << j << "]: " << EXP_HIGH[j] <<", but got: " << my_median_finder_heap.Hhigh.array[j];
+                EXPECT_EQ(my_median_finder_heap.Hlow.array[j], EXP_LOW[j])
+                    << "Checkpoint: " << CH_1   
+                    << "\nExpected EXP_LOW[" << j << "]: " << EXP_LOW[j] <<", but got: " << my_median_finder_heap.Hlow.array[j];
+            }
+        }
 
+        if (sdsToInt(input_tokens[i + 1], &input_array[i]) != 0) return;
+
+        AddElementAndFindMedian(&my_median_finder_heap, input_array[i], &current_medians);      
+
+        if (i == CH_1 - 1) {
+            EXPECT_EQ(current_medians.size, 1)
+                << "Checkpoint: " << CH_1 
+                << "\nExpected size: 1, but got: " << current_medians.size;
+            EXPECT_EQ(current_medians.array[0], EM_1)
+                << "Checkpoint: " << CH_1 
+                << "\nExpected median: " << EM_1 
+                << ", but got: " << current_medians.array[0];
+        }
+        else if (i == CH_2 - 1) {
+            EXPECT_EQ(current_medians.size, 2)
+                << "Checkpoint: " << CH_2
+                << "\nExpected size: 2, but got: " << current_medians.size;
+            EXPECT_EQ(current_medians.array[0], EM_2[0])
+                << "Checkpoint: " << CH_1 
+                << "\nExpected median: " << EM_2[0] 
+                << ", but got: " << current_medians.array[0];
+            EXPECT_EQ(current_medians.array[1], EM_2[1])
+                << "Checkpoint: " << CH_1 
+                << "\nExpected median: " << EM_2[1] 
+                << ", but got: " << current_medians.array[1];
+        }        
+    }
     sdsfree(content);
-    sdsfree(password);
-    for (int i = 0; i < count; ++i) {
-        sdsfree(input_tokens[i]);
-    }
-    free(input_tokens);
-    for (const auto& expected_password : EXPECTED_PASSWORDS) {
-        sdsfree(expected_password);
-    }
-    EXPECTED_PASSWORDS.clear(); // Optionally clear the vector*/
+    sdsfreesplitres(input_tokens, count);
+    IntArray_destroy(&current_medians);
+    Heap_destroy(&my_median_finder_heap);
 }
