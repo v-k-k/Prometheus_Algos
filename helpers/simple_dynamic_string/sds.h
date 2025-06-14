@@ -188,6 +188,7 @@ static inline void sdssetalloc(sds s, size_t newlen) {
 void sds_to_int_array(sds input, int **array, int *array_size);
 int sdsendswith(const sds s, const char *suffix);
 int sdsstartswith(const sds s, const char *prefix);
+int sdsToLongLong(const sds a, long long int *b);
 int sdsToInt(const sds a, int *b);
 
 sds sdsnewlen(const void *init, size_t initlen);

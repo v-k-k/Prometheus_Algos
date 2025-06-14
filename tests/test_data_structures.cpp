@@ -9,6 +9,7 @@ extern "C"
 {
 #include "../helpers/zip_helper/zip_helper.h"
 #include "../modules/data_structures/heap.h"
+#include "../modules/data_structures/hash_table.h"
 }
 
 class TrainingHeapSortTest : public ::testing::TestWithParam<std::tuple<const char*, const char*, size_t>> {};
@@ -182,3 +183,112 @@ TEST(test_main_heap_sort, main)
     IntArray_destroy(&current_medians);
     Heap_destroy(&my_median_finder_heap);
 }
+
+
+class HashTableTest : public ::testing::TestWithParam<std::tuple<const char*, int, int>> {};
+
+TEST_P(HashTableTest, Full)
+{
+    // Retrieve test parameters
+    const char* path = std::get<0>(GetParam());
+    int EXP_ARRAY_SIZE = std::get<1>(GetParam());
+    int EXPECTED_COUNT = std::get<2>(GetParam());
+    
+    long long int input_array[EXP_ARRAY_SIZE];
+    int MIN_SUM = -1000;
+    int MAX_SUM = 1000;
+    int RANGE_SIZE = (MAX_SUM - MIN_SUM + 1);
+    bool found_sums[RANGE_SIZE];
+
+    long long int *HT;
+    struct f_list* file_list = NULL;
+    sds *tokens, *real_tokens;
+    int count, j, real_t_count = 0, COUNTER = 0;
+    
+    get_zipped_files(&file_list, path);
+    
+    size_t entries_count = list_length(file_list);
+    EXPECT_EQ(entries_count, 1)
+        << "entries_count = " << entries_count << "\n"
+        << "expected = " << 1;
+
+    struct f_list* targetX = file_list;
+
+    tokens = sdssplitlen(targetX->content, sdslen(targetX->content), "\n", 1, &count);
+    real_tokens = (sds *)malloc(count * sizeof(sds));
+    if (real_tokens == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        sdsfreesplitres(tokens, count);  // Free tokens array before exiting
+        list_destroy(file_list);
+        return;
+    }
+
+    for (j = 0; j < count; j++) {
+        if (sdslen(tokens[j]) > 0) 
+            real_tokens[real_t_count++] = tokens[j]; // Assign, don't copy!
+    }
+    
+    //Reallocate real_tokens to the exact size
+    real_tokens = (sds*)realloc(real_tokens, real_t_count * sizeof(sds));
+    if (real_tokens == NULL) {
+        fprintf(stderr, "Memory reallocation failed\n");
+        sdsfreesplitres(tokens, count);
+        list_destroy(file_list);
+        return;
+    }
+
+    EXPECT_EQ(EXP_ARRAY_SIZE, real_t_count)
+        << "EXP_ARRAY_SIZE = " << EXP_ARRAY_SIZE << "\n"
+        << "count = " << real_t_count;
+
+    HT = (long long int *)calloc(TABLE_SIZE, sizeof(long long int)); // calloc initializes all elements to 0
+    if (!HT) {
+        std::cerr << "Memory allocation for hash table failed!" << std::endl;
+        return;
+    }
+
+    for (int i = 0; i < EXP_ARRAY_SIZE; i++) {
+        if (sdsToLongLong(real_tokens[i], &input_array[i]) != 0) {
+            std::cerr << "sdsToInt conversion failed at index: " << i << " = " << real_tokens[i] << std::endl;
+            return;
+        }
+        Insert(HT, input_array[i]);
+    }
+    
+    for (int i = 0; i < RANGE_SIZE; i++) found_sums[i] = false; 
+
+    for (int i = 0; i < EXP_ARRAY_SIZE; i++) {
+        long long x = input_array[i];
+        
+        // Check all S = x + y ∈ [-1000, 1000]
+        for (int S = MIN_SUM; S <= MAX_SUM; S++) {
+            long long y = S - x;
+
+            // Check: y ≠ x and y є in hash table
+            if (y != x && HashSearch(HT, y) != -1) {
+                found_sums[S - MIN_SUM] = true;
+            }
+        }
+    }
+    for (int i = 0; i < RANGE_SIZE; i++) {
+        if (found_sums[i]) COUNTER++;
+    }
+    
+    EXPECT_EQ(EXPECTED_COUNT, COUNTER)
+        << "EXPECTED_COUNT = " << EXPECTED_COUNT << "\n"
+        << "COUNTER = " << COUNTER;
+
+    sdsfreesplitres(tokens, count);
+    free(HT);
+    free(real_tokens);
+    list_destroy(file_list);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    HashTableParamTests, 
+    HashTableTest,
+    ::testing::Values(
+        std::make_tuple("../data/test_06.txt.zip", 100000, 22),
+        std::make_tuple("../data/input_06.txt.zip", 1000000, 41)
+    )
+);

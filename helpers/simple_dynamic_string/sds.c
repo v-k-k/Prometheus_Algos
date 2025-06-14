@@ -126,6 +126,33 @@ int sdsendswith(const sds s, const char *suffix) {
  * Returns:
  * 0 on success, -1 on failure (e.g., invalid format, out of range).
  */
+int sdsToLongLong(const sds a, long long int *b) {
+    if (a == NULL || b == NULL) {
+        return -1;
+    }
+
+    char *endptr;
+    errno = 0; // Reset errno before conversion
+    long long val = strtoll(a, &endptr, 10);
+
+    // Check for conversion errors
+    if (endptr == a) {
+        // No digits were found
+        return -1;
+    }
+    if (*endptr != '\0') {
+        // Extra characters after the number
+        return -1;
+    }
+    if ((val == LLONG_MIN || val == LLONG_MAX) && errno == ERANGE) {
+        // Overflow or underflow occurred
+        return -1;
+    }
+
+    *b = val;
+    return 0;
+}
+
 int sdsToInt(const sds a, int *b) {
     if (a == NULL || b == NULL) {
         return -1;
