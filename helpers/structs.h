@@ -3,6 +3,18 @@
 
 #include "simple_dynamic_string/sds.h"
 
+ // Definition of your BTreeNode struct
+struct BTreeNode {
+    struct BTreeNode *lchild;
+    int data;
+    struct BTreeNode *rchild;
+};
+
+// DECLARATION of the global root pointer
+// 'extern' tells the compiler that 'root' exists somewhere else,
+// and its definition will be provided by another compilation unit (bst.c file).
+extern struct BTreeNode *root;
+
 struct f_list {
     sds name;
     sds content;

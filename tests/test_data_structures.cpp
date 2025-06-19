@@ -5,11 +5,15 @@
 #include <string>
 #include <vector>
 
+#define BST_BASIC_SIZE 21
+
 extern "C"
 {
 #include "../helpers/zip_helper/zip_helper.h"
 #include "../modules/data_structures/heap.h"
 #include "../modules/data_structures/hash_table.h"
+#include "../modules/data_structures/bst.h"
+#include "../modules/sorting/sorting.h"
 }
 
 class TrainingHeapSortTest : public ::testing::TestWithParam<std::tuple<const char*, const char*, size_t>> {};
@@ -290,5 +294,76 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         std::make_tuple("../data/test_06.txt.zip", 100000, 22),
         std::make_tuple("../data/input_06.txt.zip", 1000000, 41)
+    )
+);
+/*void printPreorder(struct BTreeNode* node) {
+    if (node == NULL) {
+        printf("NULL ");
+        return;
+    }
+    printf("%d ", node->data);
+    printPreorder(node->lchild);
+    printPreorder(node->rchild);
+}
+void printInorder(struct BTreeNode *p) {
+    if (p == NULL) { // Explicitly check for NULL, same as printPreorder
+        printf("NULL ");
+        return;
+    }
+    // 1. Visit Left Child
+    printInorder(p->lchild);
+    // 2. Visit Root (Print Data)
+    printf("%d ", p->data);
+    // 3. Visit Right Child
+    printInorder(p->rchild);
+}*/
+
+class TrainingBstTest : public ::testing::TestWithParam<std::tuple<std::array<int, BST_BASIC_SIZE>, int, int>> {};
+
+TEST_P(TrainingBstTest, Training)
+{
+    // Access the parameters
+    std::array<int, BST_BASIC_SIZE> TREE_DATA = std::get<0>(GetParam());
+    int EXP_SUM = std::get<1>(GetParam());
+    int EXP_AMOUNT = std::get<2>(GetParam());
+
+    const int* c_tree_array_ptr = TREE_DATA.data();
+
+    // Initialize the index for the build process
+    int current_build_idx = 0;
+
+    // Build the tree, passing the source array, its size, and the index pointer
+    root = BuildTreePreorder(c_tree_array_ptr, BST_BASIC_SIZE, &current_build_idx);
+
+    int inorder_values[BST_BASIC_SIZE];
+    int current_inorder_index = 0; // Initialize index to 0
+
+    // Call the function to save inorder values
+    BTreeInorderToArray(root, inorder_values, &current_inorder_index, BST_BASIC_SIZE);
+
+    int* temp = (int*)malloc(current_inorder_index * sizeof(int));
+    int inversion_count = 0;
+    
+    merge_sort(inorder_values, temp, 0, current_inorder_index - 1, &inversion_count);
+    free(temp);
+    
+    current_inorder_index = 0; // Reset index for the next operation
+    BTreeInorderFromArray(root, inorder_values, &current_inorder_index, BST_BASIC_SIZE);
+
+    int monotonicPathsCount = findMonotonicPathsCount(root, EXP_SUM);
+
+    EXPECT_EQ(monotonicPathsCount, EXP_AMOUNT)
+        << "Calculated = " << monotonicPathsCount << "\n"
+        << "expected paths count = " << EXP_AMOUNT;     
+        
+    freeTree(root);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    BstParamTests, 
+    TrainingBstTest,
+    ::testing::Values(
+        std::make_tuple(std::array<int, BST_BASIC_SIZE>{ 1, 4, 6, 10, 0, 0, 0, 7, 0, 8, 0, 0, 2, 5, 0, 0, 3, 9, 0, 0, 0 }, 9, 3),
+        std::make_tuple(std::array<int, BST_BASIC_SIZE>{ 1, 2, 7, 8, 0, 0, 10, 0, 0, 0, 3, 4, 6, 0, 0, 0, 5, 9, 0, 0, 0 }, 9, 3)
     )
 );

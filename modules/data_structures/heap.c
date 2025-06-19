@@ -61,20 +61,6 @@ int ExtractMax(IntArray* heap_array) {
         MaxHeapify(heap_array->array, heap_array->size, 0);
  
     return max_val;
-/*(int *maxA, int *n_ptr){
-    if (*n_ptr == 0) {
-        fprintf(stderr, "Error: ExtractMax called on empty heap.\n");
-        return -1; // Or some other error indicator, like INT_MIN from limits.h
-    }
-    int max = maxA[0];
-    swap(&maxA[0], &maxA[*n_ptr-1]);
-    (*n_ptr)--; // Decrement the size in the caller's scope
-
-    // Only heapify if there are elements left after extraction
-    if (*n_ptr > 0) {
-        MaxHeapify(maxA, *n_ptr, 0);
-    }
-    return max;*/
 }
 
 int ExtractMin(IntArray* heap_array) {
@@ -92,20 +78,6 @@ int ExtractMin(IntArray* heap_array) {
         MinHeapify(heap_array->array, heap_array->size, 0);
 
     return min_val;
-/*(int *minA, int *n_ptr){
-    if (*n_ptr == 0) {
-        fprintf(stderr, "Error: ExtractMax called on empty heap.\n");
-        return -1; // Or some other error indicator, like INT_MIN from limits.h
-    }
-    int min = minA[0];
-    swap(&minA[0], &minA[*n_ptr-1]);
-    (*n_ptr)--; // Decrement the size in the caller's scope
-
-    // Only heapify if there are elements left after extraction
-    if (*n_ptr > 0) {
-        MinHeapify(minA, *n_ptr, 0);
-    }
-    return min;*/
 }
 
 void MaxHeapify(int* array, size_t array_len, int start) {
@@ -277,62 +249,4 @@ int AddElementAndFindMedian(Heap* heap_instance, int new_element, IntArray* medi
     }
 
     return 0;
-}
-
-void FindMedians(int *A, int n, int start, int medians[], int arrayLow[], int arrayHigh[]){
-    /*appendToPositiveIntArray(A, n, start);
-    if (n == 1)
-    {
-        medians[0] = A[0];
-        arrayHigh[0] = A[0];
-        //__high = __high.Append(array[0]);
-    }
-    else
-    {
-        if (n == 2)
-        {
-            if (start > arrayHigh[0])
-            {
-                arrayLow[0] = start;
-                swap(&arrayHigh[0], &arrayLow[0]);
-            }
-            else
-                arrayLow[0] = start;
-        }
-        else if (n > 0 && start < arrayLow[0])
-            appendToPositiveIntArray(arrayLow, n, start);
-        else
-            appendToPositiveIntArray(arrayHigh, n, start);
-        for (int i = 0; i < n; i++) {
-            if (arrayHigh[i] == -1 && arrayLow[i] == -1) break;
-
-            if ((arrayHigh[i] > 0 && arrayLow[i] == -1) && (arrayHigh[i+1] > 0 && arrayLow[i+1] == -1)){
-                appendToPositiveIntArray(arrayLow, n, ExtractMin(arrayHigh, &n));
-                break;
-            }
-            else if ((arrayLow[i] > 0 && arrayHigh[i] == -1) && (arrayLow[i+1] > 0 && arrayHigh[i+1] == -1)){
-                appendToPositiveIntArray(arrayHigh, n, ExtractMax(arrayLow, &n));
-                break;
-            }
-        }
-        BuildMinHeap(arrayHigh, n);
-        BuildMaxHeap(arrayLow, n);
-        if (n > 0)
-        {
-            if (n % 2 == 0)
-            {
-                appendToPositiveIntArray(medians, n, arrayLow[0]);                
-                appendToPositiveIntArray(medians, n, arrayHigh[0]);
-            }
-            else{
-                for (int i = 0; i < n; i++) {
-                    if (arrayHigh[i] == -1 && arrayLow[i] == -1) break;
-                    if (arrayHigh[i] > 0 && arrayLow[i] == -1)
-                        appendToPositiveIntArray(medians, n, arrayHigh[0]);
-                    else 
-                        appendToPositiveIntArray(medians, n, arrayLow[0]);                        
-                }
-            }
-        }
-    }*/
 }
