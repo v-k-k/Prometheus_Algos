@@ -295,8 +295,8 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple("../data/test_06.txt.zip", 100000, 22),
         std::make_tuple("../data/input_06.txt.zip", 1000000, 41)
     )
-);
-/*void printPreorder(struct BTreeNode* node) {
+);/*
+void printPreorder(struct BTreeNode* node) {
     if (node == NULL) {
         printf("NULL ");
         return;
@@ -365,5 +365,125 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         std::make_tuple(std::array<int, BST_BASIC_SIZE>{ 1, 4, 6, 10, 0, 0, 0, 7, 0, 8, 0, 0, 2, 5, 0, 0, 3, 9, 0, 0, 0 }, 9, 3),
         std::make_tuple(std::array<int, BST_BASIC_SIZE>{ 1, 2, 7, 8, 0, 0, 10, 0, 0, 0, 3, 4, 6, 0, 0, 0, 5, 9, 0, 0, 0 }, 9, 3)
+    )
+);
+
+class ZippedBstTest : public ::testing::TestWithParam<std::tuple<const char*, int>> {};
+
+TEST_P(ZippedBstTest, Zipped)
+{
+    const char* path = "../data/data_examples_07.zip";
+    
+    // Access the parameters
+    const char* F_SUFF = std::get<0>(GetParam());
+    int DESIRED_SUM = std::get<1>(GetParam());
+
+    struct f_list* file_list = NULL;
+    sds *tokens, *real_tokens;
+    int count, j, real_t_count = 0, EXP_COUNT = 0;
+    int *input_array;
+
+    sds inPref = sdscatfmt(sdsempty(), "%s.txt", F_SUFF);
+    sds outPref = sdscatfmt(sdsempty(), "%s_%i.txt", F_SUFF, DESIRED_SUM);
+    
+    get_zipped_files(&file_list, path);
+    
+    size_t entries_count = list_length(file_list);
+    struct f_list* targetX = file_list;
+    for(int64_t idx = 0; idx < entries_count; ++idx){
+        sds *input_tokens, *real_input_tokens, *output_tokens, *real_output_tokens;   
+        if (sdsendswith(targetX->name, inPref)) {         
+            input_tokens = sdssplitlen(targetX->content, sdslen(targetX->content), " ", 1, &count);
+            real_input_tokens = (sds *)malloc(count * sizeof(sds));
+            if (real_input_tokens == NULL) {
+                fprintf(stderr, "Memory allocation failed\n");
+                sdsfreesplitres(input_tokens, count);  // Free tokens array before exiting
+                list_destroy(file_list);
+                return;
+            }
+
+            for (j = 0; j < count; j++) {
+                if (sdslen(input_tokens[j]) > 0) 
+                    real_input_tokens[real_t_count++] = input_tokens[j]; // Assign, don't copy!
+            }
+        
+            //Reallocate real_tokens to the exact size
+            real_input_tokens = (sds*)realloc(real_input_tokens, real_t_count * sizeof(sds));
+            if (real_input_tokens == NULL) {
+                fprintf(stderr, "Memory reallocation failed\n");
+                sdsfreesplitres(input_tokens, count);
+                list_destroy(file_list);
+                return;
+            }
+
+            // Allocate memory for input_array
+            input_array = (int *)malloc(real_t_count * sizeof(int));
+            if (input_array == NULL) {
+                fprintf(stderr, "Error: Memory allocation failed for input_array.\n");
+                // Handle allocation failure: maybe return an error code or exit
+                return; // Or exit(EXIT_FAILURE);
+            }
+
+            for (j = 0; j < real_t_count; j++) 
+                if (sdsToInt(real_input_tokens[j], &input_array[j]) != 0) return; 
+            
+            sdsfreesplitres(input_tokens, count);
+            free(real_input_tokens);
+        }
+        if (sdsendswith(targetX->name, outPref)) {
+            output_tokens = sdssplitlen(targetX->content, sdslen(targetX->content), "\n", 1, &EXP_COUNT);
+            sdsfreesplitres(output_tokens, EXP_COUNT);
+        }        
+        targetX = targetX->next;
+    }
+
+    // Initialize the index for the build process
+    int current_build_idx = 0;
+
+    // Build the tree, passing the source array, its size, and the index pointer
+    root = BuildTreePreorder(input_array, real_t_count, &current_build_idx);
+    
+    int inorder_values[real_t_count];
+    int current_inorder_index = 0; // Initialize index to 0
+
+    // Call the function to save inorder values
+    BTreeInorderToArray(root, inorder_values, &current_inorder_index, real_t_count);
+
+    int* temp = (int*)malloc(current_inorder_index * sizeof(int));
+    int inversion_count = 0;
+    
+    merge_sort(inorder_values, temp, 0, current_inorder_index - 1, &inversion_count);
+    free(temp);
+    
+    current_inorder_index = 0; // Reset index for the next operation
+    BTreeInorderFromArray(root, inorder_values, &current_inorder_index, real_t_count);
+
+    int monotonicPathsCount = findMonotonicPathsCount(root, DESIRED_SUM);
+
+    EXPECT_EQ(monotonicPathsCount, EXP_COUNT)
+        << "Calculated = " << monotonicPathsCount << "\n"
+        << "expected paths count = " << EXP_COUNT;       
+        
+    sdsfree(inPref);
+    sdsfree(outPref);
+    free(input_array);
+    list_destroy(file_list);
+    freeTree(root);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ZippedBstParamTests, 
+    ZippedBstTest,
+    ::testing::Values(
+        std::make_tuple("10a", 9),
+        std::make_tuple("10b", 7),
+        std::make_tuple("10c", 9),
+        std::make_tuple("10d", 5),
+        std::make_tuple("10e", 5),
+        std::make_tuple("100a", 51),
+        std::make_tuple("100b", 78),
+        std::make_tuple("100c", 103),
+        std::make_tuple("100d", 50),
+        std::make_tuple("100e", 50)
     )
 );
