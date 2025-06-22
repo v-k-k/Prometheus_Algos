@@ -295,28 +295,8 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple("../data/test_06.txt.zip", 100000, 22),
         std::make_tuple("../data/input_06.txt.zip", 1000000, 41)
     )
-);/*
-void printPreorder(struct BTreeNode* node) {
-    if (node == NULL) {
-        printf("NULL ");
-        return;
-    }
-    printf("%d ", node->data);
-    printPreorder(node->lchild);
-    printPreorder(node->rchild);
-}
-void printInorder(struct BTreeNode *p) {
-    if (p == NULL) { // Explicitly check for NULL, same as printPreorder
-        printf("NULL ");
-        return;
-    }
-    // 1. Visit Left Child
-    printInorder(p->lchild);
-    // 2. Visit Root (Print Data)
-    printf("%d ", p->data);
-    // 3. Visit Right Child
-    printInorder(p->rchild);
-}*/
+);
+/* ****** */
 
 class TrainingBstTest : public ::testing::TestWithParam<std::tuple<std::array<int, BST_BASIC_SIZE>, int, int>> {};
 
@@ -487,3 +467,142 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple("100e", 50)
     )
 );
+
+TEST(test_bst_main, main)
+{
+    std::string DATA_SOURCE = "https://courses.prometheus.org.ua/assets/courseware/v1/2b7ac6054236d173fc556de9f817c494/c4x/KPI/Algorithms101/asset/input_1000a.txt";
+    int EXP_ROOT = 490;
+    int EXP_FIRST_LEAFS[] = {2, 4, 7};
+    int EXP_LAST_LEAFS[] = {992, 996, 999};
+    int count = 0, real_t_count = 0, input_size = 0;
+    int SUMS[] = {1059, 1546, 1940}; // Expected sums for the unique paths
+    int PATH1[] = {354, 353, 352}; // Expected path for sum 1059
+    int PATH2[] = {388, 385, 387, 386}; // Expected path for sum 1546
+    int PATH3[] = {490, 258, 366, 424, 402}; // Expected path for sum 1940
+
+    int *input_array;
+    sds *real_input_tokens;
+
+    sds content = retrievePlainText(DATA_SOURCE.c_str());
+    sds *input_tokens = sdssplitlen(content, sdslen(content), " ", 1, &count);
+    real_input_tokens = (sds *)malloc(count * sizeof(sds));
+    if (real_input_tokens == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        sdsfreesplitres(input_tokens, count);  // Free tokens array before exiting
+        return;
+    }
+
+    for (int j = 0; j < count; j++) {
+        if (sdslen(input_tokens[j]) > 0) 
+            real_input_tokens[real_t_count++] = input_tokens[j]; // Assign, don't copy!
+    }
+
+    //Reallocate real_tokens to the exact size
+    real_input_tokens = (sds*)realloc(real_input_tokens, real_t_count * sizeof(sds));
+    if (real_input_tokens == NULL) {
+        fprintf(stderr, "Memory reallocation failed\n");
+        sdsfreesplitres(input_tokens, count);
+        return;
+    }
+
+    // Allocate memory for input_array
+    input_array = (int *)malloc(real_t_count * sizeof(int));
+    if (input_array == NULL) {
+        fprintf(stderr, "Error: Memory allocation failed for input_array.\n");
+        // Handle allocation failure: maybe return an error code or exit
+        return; // Or exit(EXIT_FAILURE);
+    }
+
+    for (int j = 0; j < real_t_count; j++) 
+        if (sdsToInt(real_input_tokens[j], &input_array[j]) != 0) return;    
+    
+    sdsfreesplitres(input_tokens, count);
+    free(real_input_tokens);
+    sdsfree(content);
+    
+    // Initialize the index for the build process
+    int current_build_idx = 0;
+
+    // Build the tree, passing the source array, its size, and the index pointer
+    root = BuildTreePreorder(input_array, real_t_count, &current_build_idx);
+    
+    int inorder_values[real_t_count];
+    int current_inorder_index = 0; // Initialize index to 0
+
+    // Call the function to save inorder values
+    BTreeInorderToArray(root, inorder_values, &current_inorder_index, real_t_count);
+
+    int* temp = (int*)malloc(current_inorder_index * sizeof(int));
+    int inversion_count = 0;
+    
+    merge_sort(inorder_values, temp, 0, current_inorder_index - 1, &inversion_count);
+    free(temp);
+    
+    current_inorder_index = 0; // Reset index for the next operation
+    BTreeInorderFromArray(root, inorder_values, &current_inorder_index, real_t_count);
+
+    EXPECT_EQ(root->data, EXP_ROOT)
+        << "ROOT = " << root->data << "\n"
+        << "EXP_ROOT = " << EXP_ROOT; 
+
+    // Pass 1: Count qualifying leaf nodes
+    int leaf_count = 0;
+    countQualifyingLeafNodes(root, &leaf_count);
+
+    // Pass 2: Allocate array and collect values
+    int *leafs_array = (int*)malloc(leaf_count * sizeof(int));
+    if (leafs_array == NULL) {
+        fprintf(stderr, "Error: Memory allocation failed for leafs_array.\n");
+        return;
+    }
+
+    int current_idx = 0;
+    collectQualifyingLeafValues(root, leafs_array, &current_idx);
+
+    for (int i = 0; i < leaf_count; i++) {
+        if (i < 3) {
+            EXPECT_EQ(leafs_array[i], EXP_FIRST_LEAFS[i])
+                << "First leafs[" << i << "] = " << leafs_array[i] 
+                << ", expected: " << EXP_FIRST_LEAFS[i];
+        }
+        else if (i >= leaf_count - 3) {
+            EXPECT_EQ(leafs_array[i], EXP_LAST_LEAFS[-(leaf_count - i - 3)])
+                << "Last leafs[" << i << "] = " << leafs_array[i] 
+                << ", expected: " << EXP_LAST_LEAFS[-(leaf_count - i - 3)];
+        }
+    }   
+    
+    for (int i = 0; i < 3; i++) {
+        int path_len = 0;
+        int *path_to_sum = findUniqueMonotonicPath(root, SUMS[i], &path_len);
+
+        switch (i)
+        {
+        case 0:
+            for (int j = 0; j < path_len; j++) {
+                EXPECT_EQ(path_to_sum[j], PATH1[j])
+                    << "Path for sum " << SUMS[i] << " does not match expected value at index " << j;
+            }
+            break;
+
+        case 1:
+            for (int j = 0; j < path_len; j++) {
+                EXPECT_EQ(path_to_sum[j], PATH2[j])
+                    << "Path for sum " << SUMS[i] << " does not match expected value at index " << j;
+            }
+            break;
+        
+        default:
+            for (int j = 0; j < path_len; j++) {
+                EXPECT_EQ(path_to_sum[j], PATH3[j])
+                    << "Path for sum " << SUMS[i] << " does not match expected value at index " << j;
+            }
+            break;
+        }
+
+        free(path_to_sum);
+    }
+    free(leafs_array);
+    freeTree(root);
+    free(input_array);
+}

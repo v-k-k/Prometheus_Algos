@@ -31,4 +31,8 @@ int IntArray_resize(IntArray* arr, size_t new_size);
 
 void IntArray_destroy(IntArray* arr);
 
+void printPreorder(struct BTreeNode* node);
+
+void printInorder(struct BTreeNode *node);
+
 #endif

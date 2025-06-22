@@ -232,3 +232,26 @@ void IntArray_destroy(IntArray* arr) {
     arr->size = 0;
     arr->capacity = 0;
 }
+
+void printInorder(struct BTreeNode *node) {
+    if (node == NULL) { // Explicitly check for NULL, same as printPreorder
+        printf("NULL ");
+        return;
+    }
+    // 1. Visit Left Child
+    printInorder(node->lchild);
+    // 2. Visit Root (Print Data)
+    printf("%d ", node->data);
+    // 3. Visit Right Child
+    printInorder(node->rchild);
+}
+
+void printPreorder(struct BTreeNode* node) {
+    if (node == NULL) {
+        printf("NULL ");
+        return;
+    }
+    printf("%d ", node->data);
+    printPreorder(node->lchild);
+    printPreorder(node->rchild);
+}

@@ -258,3 +258,159 @@ int findMonotonicPathsCount(struct BTreeNode* root, int K) {
 
     return total_paths_count;
 }
+
+void countQualifyingLeafNodes(struct BTreeNode *node, int *count_ptr) {
+    if (node == NULL) return;
+
+    // A node qualifies as a "leaf" if it has no children AND its data is not 0.
+    // This directly translates the C# 'node.Left.Value == 0 && node.Right.Value == 0'
+    // as an indication of NULL children, and 'node.Value != 0' as an explicit filter.
+    if (node->lchild == NULL && node->rchild == NULL && node->data != 0)
+        (*count_ptr)++;
+
+    // Recursively visit children
+    countQualifyingLeafNodes(node->lchild, count_ptr);
+    countQualifyingLeafNodes(node->rchild, count_ptr);
+}
+
+void collectQualifyingLeafValues(struct BTreeNode *node, int *leafs_array, int *current_idx_ptr) {
+    if (node == NULL) return;
+
+    // Check the same leaf criteria as in the counting phase
+    if (node->lchild == NULL && node->rchild == NULL && node->data != 0) {
+        leafs_array[*current_idx_ptr] = node->data;
+        (*current_idx_ptr)++;
+    }
+
+    // Recursively visit children
+    collectQualifyingLeafValues(node->lchild, leafs_array, current_idx_ptr);
+    collectQualifyingLeafValues(node->rchild, leafs_array, current_idx_ptr);
+}
+
+int findPathFromCurrentNodeRecursive(struct BTreeNode* node, int target_sum,
+                                     int* current_path_buffer, int* path_len_ptr,
+                                     int max_tree_height,
+                                     int** found_path_ptr_ptr, int* found_path_len_ptr) {
+    // If a path has already been found globally, or current node is NULL, stop this branch.
+    if (*found_path_ptr_ptr != NULL || node == NULL) {
+        return 0; // Indicate that no new path was found in this sub-branch.
+    }
+
+    // Add current node to the temporary path buffer
+    if (*path_len_ptr >= max_tree_height) {
+        fprintf(stderr, "Path buffer overflow! Increase max_tree_height.\n");
+        exit(EXIT_FAILURE); // Or handle more gracefully
+    }
+    current_path_buffer[*path_len_ptr] = node->data;
+    (*path_len_ptr)++;
+
+    // Calculate current sum of the path being built
+    // Use long long to prevent potential overflow during sum accumulation for very long paths.
+    long long current_sum_val = 0;
+    for (int i = 0; i < *path_len_ptr; i++) {
+        current_sum_val += current_path_buffer[i];
+    }
+
+    // If the current sum equals the target, we found the unique path
+    if (current_sum_val == target_sum) {
+        // Allocate memory for the found path
+        *found_path_ptr_ptr = (int*)malloc(*path_len_ptr * sizeof(int));
+        if (*found_path_ptr_ptr == NULL) {
+            fprintf(stderr, "Memory allocation failed for found path array!\n");
+            exit(EXIT_FAILURE);
+        }
+        // Copy the path values
+        memcpy(*found_path_ptr_ptr, current_path_buffer, *path_len_ptr * sizeof(int));
+        *found_path_len_ptr = *path_len_ptr;
+        (*path_len_ptr)--; // Backtrack for the current node before returning
+        return 1; // Indicate that the path has been found
+    }
+
+    // Recursively call for left and right children to continue the current path
+    // If path is found in a recursive call, propagate the 'found' status.
+    if (findPathFromCurrentNodeRecursive(node->lchild, target_sum,
+                                         current_path_buffer, path_len_ptr,
+                                         max_tree_height,
+                                         found_path_ptr_ptr, found_path_len_ptr)) {
+        (*path_len_ptr)--; // Backtrack for the current node
+        return 1;
+    }
+    if (findPathFromCurrentNodeRecursive(node->rchild, target_sum,
+                                         current_path_buffer, path_len_ptr,
+                                         max_tree_height,
+                                         found_path_ptr_ptr, found_path_len_ptr)) {
+        (*path_len_ptr)--; // Backtrack for the current node
+        return 1;
+    }
+
+    // Backtrack: remove current node from the temporary path buffer
+    (*path_len_ptr)--;
+    return 0; // Path not found in this specific continuation
+}
+
+void dfs_traverse_and_search(struct BTreeNode* node, int target_sum,
+                             int* current_path_buffer, int max_tree_height,
+                             int** found_path_ptr_ptr, int* found_path_len_ptr) {
+    // If a path has already been found globally, or current node is NULL, stop.
+    if (node == NULL || *found_path_ptr_ptr != NULL) {
+        return;
+    }
+
+    // Attempt to find a path STARTING from 'node'.
+    // A new path search starts, so its temporary length starts at 0 for this call.
+    int path_segment_len = 0; // This variable is local to this dfs_traverse_and_search frame.
+    findPathFromCurrentNodeRecursive(node, target_sum,
+                                     current_path_buffer, &path_segment_len,
+                                     max_tree_height,
+                                     found_path_ptr_ptr, found_path_len_ptr);
+
+    // If a path was found starting from 'node' (or its descendants via findPathFromCurrentNodeRecursive),
+    // then we are done with the global search.
+    if (*found_path_ptr_ptr != NULL) {
+        return;
+    }
+
+    // If no path was found starting from 'node', continue the DFS
+    // by considering its children as NEW potential starting points for other paths.
+    dfs_traverse_and_search(node->lchild, target_sum,
+                            current_path_buffer, max_tree_height,
+                            found_path_ptr_ptr, found_path_len_ptr);
+
+    // Check again after left subtree search, in case the path was found there.
+    if (*found_path_ptr_ptr != NULL) {
+        return;
+    }
+
+    dfs_traverse_and_search(node->rchild, target_sum,
+                            current_path_buffer, max_tree_height,
+                            found_path_ptr_ptr, found_path_len_ptr);
+}
+
+int* findUniqueMonotonicPath(struct BTreeNode* root, int K, int* out_path_len) {
+    *out_path_len = 0; // Initialize length to 0
+
+    if (root == NULL) {
+        return NULL;
+    }
+
+    // Maximum possible height of the tree. A skewed tree can have height N.
+    // Using a fixed size for simplicity. For very deep trees, consider dynamic resizing
+    // or calculating actual height first.
+    int max_tree_height = 1000;
+    int* current_path_buffer = (int*)malloc(max_tree_height * sizeof(int));
+    if (current_path_buffer == NULL) {
+        fprintf(stderr, "Memory allocation failed for current_path_buffer!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int* found_path = NULL; // This will hold the pointer to the dynamically allocated result path
+    int found_len = 0;      // This will hold the length of the result path
+
+    // Start the main DFS traversal, which will initiate sub-searches from each node.
+    // &found_path and &found_len are passed so the recursive functions can modify them directly.
+    dfs_traverse_and_search(root, K, current_path_buffer, max_tree_height, &found_path, &found_len);
+
+    free(current_path_buffer); // Free the temporary buffer used during the search
+    *out_path_len = found_len; // Set the output path length
+    return found_path;         // Return the found path (or NULL)
+}
