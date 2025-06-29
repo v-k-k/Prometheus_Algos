@@ -35,4 +35,10 @@ void printPreorder(struct BTreeNode* node);
 
 void printInorder(struct BTreeNode *node);
 
+// Function to print the graph
+void printGraph(struct Graph* graph);
+
+// Comparison function for qsort
+int compareInts(const void *a, const void *b);
+
 #endif

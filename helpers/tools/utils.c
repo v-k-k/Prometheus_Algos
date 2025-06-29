@@ -255,3 +255,26 @@ void printPreorder(struct BTreeNode* node) {
     printPreorder(node->lchild);
     printPreorder(node->rchild);
 }
+
+// Function to print the graph (for verification)
+void printGraph(struct Graph* graph) {
+    printf("\n--- Graph Adjacency List ---\n");
+    for (int v = 1; v <= graph->numVertices; v++) { // Assuming nodes are 1-indexed
+        struct AdjUNode* temp = graph->adjLists[v];
+        if (temp != NULL) {
+            printf("Vertex %d: ", v);
+            while (temp) {
+                printf("-> %d ", temp->dest);
+                temp = temp->next;
+            }
+            printf("\n");
+        }
+    }
+    printf("----------------------------\n");
+}
+
+int compareInts(const void *a, const void *b) {
+    // Cast void pointers to int pointers and dereference them
+    return (*(int*)a - *(int*)b);
+}
+

@@ -3,6 +3,22 @@
 
 #include "simple_dynamic_string/sds.h"
 
+// Structure for a node in the adjacency list (unchanged from prior, but included for context)
+struct AdjUNode {
+    int dest;
+    struct AdjUNode* next;
+};
+
+// Structure for the adjacency list (MODIFIED to include Kosaraju-specific fields)
+struct Graph {
+    int numVertices;
+    struct AdjUNode** adjLists;
+    // For Kosaraju's algorithm:
+    int* visited;          // Array to track visited status for DFS
+    int* dfsOrder;         // Array to store DFS finishing order (nodes by finishing time)
+    int dfsOrderIndex;     // Current index for dfsOrder array (used as a stack pointer)
+};
+
  // Definition of your BTreeNode struct
 struct BTreeNode {
     struct BTreeNode *lchild;
