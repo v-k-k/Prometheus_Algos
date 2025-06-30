@@ -297,7 +297,6 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple("../data/input_06.txt.zip", 1000000, 41)
     )
 );
-/* ****** */
 
 class TrainingBstTest : public ::testing::TestWithParam<std::tuple<std::array<int, BST_BASIC_SIZE>, int, int>> {};
 
@@ -778,3 +777,96 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple("../data/test_08.zip", 4)
     )
 );
+
+TEST(test_strong_connected_graph_main, main)
+{
+    const char* PATH = "../data/input_08.txt";
+    int EXPECTED_RESULT[] = { 434821, 968, 459, 313, 211 };
+    const int ELEMENTS_PER_EDGE = 2; // Each edge has a source and a destination
+
+    sds *input_tokens, *real_input_tokens;
+    int count, j, real_t_count = 0, outputSize = 0;
+    int* graphEdges;
+
+    char *input_content = read_text_file(PATH);
+    input_tokens = sdssplitlen(input_content, strlen(input_content), "\n", 1, &count);
+            
+    real_input_tokens = (sds *)malloc(count * sizeof(sds));
+    if (real_input_tokens == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        sdsfreesplitres(input_tokens, count);  // Free tokens array before exiting
+        return;
+    }
+
+    for (j = 0; j < count; j++) {
+        if (sdslen(input_tokens[j]) > 0) 
+            real_input_tokens[real_t_count++] = input_tokens[j]; // Assign, don't copy!
+    }
+
+    //Reallocate real_tokens to the exact size
+    real_input_tokens = (sds*)realloc(real_input_tokens, real_t_count * sizeof(sds));
+    if (real_input_tokens == NULL) {
+        fprintf(stderr, "Memory reallocation failed\n");
+        sdsfreesplitres(input_tokens, count);
+        return;
+    }
+
+    // Allocate memory for all (real_t_count * ELEMENTS_PER_EDGE) integers
+    graphEdges = (int*)malloc(real_t_count * ELEMENTS_PER_EDGE * sizeof(int));
+    if (graphEdges == NULL) perror("Failed to allocate memory for graphEdges");
+
+    for (j = 0; j < real_t_count; j++) {
+        if (sdslen(real_input_tokens[j]) > 0) {
+            int eCount = 0;
+            sds* edge = sdssplitlen(real_input_tokens[j], sdslen(real_input_tokens[j]), " ", 1, &eCount);
+            edge[1] = sdstrim(edge[1],"\r");
+
+            // Source
+            if (sdsToInt(edge[0], &graphEdges[j * ELEMENTS_PER_EDGE + 0]) != 0) printf("IN: sdsToInt conversion failed for edge[0]: %s\n", edge[0]);
+            
+            // Destination
+            if (sdsToInt(edge[1], &graphEdges[j * ELEMENTS_PER_EDGE + 1]) != 0) printf("IN: sdsToInt conversion failed for edge[1]: %s\n", edge[1]);
+            
+            sdsfreesplitres(edge, eCount); // Free the edge tokens
+        }
+    }   
+    // --- Graph Creation using the populated graphEdges array ---
+
+    // 1. Find the maximum vertex number from the dynamically allocated edges
+    int maxVertex = findMaxVertex(graphEdges, real_t_count, ELEMENTS_PER_EDGE);
+
+    // 2. Create the graph structure
+    struct Graph* graph = createGraph(maxVertex);
+    if (graph == NULL) {
+        free(graphEdges); // Clean up already allocated edge data
+        return; // Indicate error
+    }
+
+    // 3. Add edges to the graph using the data from graphEdges
+    for (int i = 0; i < real_t_count; i++) {
+        int src = graphEdges[i * ELEMENTS_PER_EDGE + 0];
+        int dest = graphEdges[i * ELEMENTS_PER_EDGE + 1];
+        addEdge(graph, src, dest);
+    }
+
+    // 4. Calculate Strong Connected Components sizes using Kosaraju's algorithm
+    int numSCCs = 0;
+    int* sccSizes = countStrongConnectedComponentsSize(graph, &numSCCs);
+
+    ASSERT_NE(sccSizes, nullptr) << "countStrongConnectedComponentsSize returned NULL for a valid graph.";
+
+    for (int i = 0; i < 5; i++) {
+        EXPECT_EQ(EXPECTED_RESULT[i], sccSizes[numSCCs - (i + 1)]) 
+            << "Expected size of SCC " << EXPECTED_RESULT[i] 
+            << " does not match the actual size " << sccSizes[numSCCs - (i + 1)];
+    }
+    free(sccSizes); // Free the array returned by countStrongConnectedComponentsSize
+
+    // 5. Free all allocated memory
+    free(graphEdges); // Free the array holding edge data
+    freeGraph(graph); // Free the adjacency list graph structure
+    free(real_input_tokens); // Free the array holding input tokens
+    sdsfreesplitres(input_tokens, count); // Free the input tokens array
+    free(input_content); // Free the content read from the file 
+}
+/* ****** */

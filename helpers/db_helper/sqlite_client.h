@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sqlite3.h>
 #include "../structs.h"
+#include "../tools/utils.h"
 
 #define DB_CONNECTION_STRING "TestDataDb.db"
 #define SQL_FILE "../helpers/db_helper/TestDataDb.sql"
@@ -32,9 +33,6 @@ void free_string_array_tuple(StringArrayTuple*);
 
 // Mimics the DoQuery function
 IntStringListDictionary* do_query(const char*, int);
-
-// Helper function to read the SQL file
-char* read_sql_file(const char*);
 
 // Mimics GenerateTestDataDb function
 void generate_test_data_db();

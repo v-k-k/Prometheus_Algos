@@ -41,4 +41,7 @@ void printGraph(struct Graph* graph);
 // Comparison function for qsort
 int compareInts(const void *a, const void *b);
 
+// Helper function to read the text file
+char* read_text_file(const char *filename);
+
 #endif

@@ -217,38 +217,6 @@ IntStringListDictionary* do_query(const char *query, int max_column_idx) {
     return result;
 }
 
-// Helper function to read the SQL file
-char* read_sql_file(const char *filename) {
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL) {
-        perror("Error opening SQL file");
-        return NULL;
-    }
-
-    fseek(fp, 0, SEEK_END);
-    long file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    char *sql_content = (char*)malloc(file_size + 1);
-    if (sql_content == NULL) {
-        perror("Failed to allocate memory for SQL content");
-        fclose(fp);
-        return NULL;
-    }
-
-    size_t bytes_read = fread(sql_content, 1, file_size, fp);
-    if (bytes_read != (size_t)file_size) {
-        fprintf(stderr, "Error reading SQL file.\n");
-        free(sql_content);
-        fclose(fp);
-        return NULL;
-    }
-    sql_content[bytes_read] = '\0';
-
-    fclose(fp);
-    return sql_content;
-}
-
 // Mimics GenerateTestDataDb function
 void generate_test_data_db() {
     sqlite3 *db;
@@ -260,7 +228,7 @@ void generate_test_data_db() {
         return;
     }
 
-    char *sql_content = read_sql_file(SQL_FILE);
+    char *sql_content = read_text_file(SQL_FILE);
     if (sql_content == NULL) {
         sqlite3_close(db);
         return;

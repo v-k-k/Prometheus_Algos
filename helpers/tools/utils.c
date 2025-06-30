@@ -278,3 +278,33 @@ int compareInts(const void *a, const void *b) {
     return (*(int*)a - *(int*)b);
 }
 
+char* read_text_file(const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        perror("Error opening SQL file");
+        return NULL;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long file_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    char *content = (char*)malloc(file_size + 1);
+    if (content == NULL) {
+        perror("Failed to allocate memory for SQL content");
+        fclose(fp);
+        return NULL;
+    }
+
+    size_t bytes_read = fread(content, 1, file_size, fp);
+    if (bytes_read != (size_t)file_size) {
+        fprintf(stderr, "Error reading SQL file.\n");
+        free(content);
+        fclose(fp);
+        return NULL;
+    }
+    content[bytes_read] = '\0';
+
+    fclose(fp);
+    return content;
+}
