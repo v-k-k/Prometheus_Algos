@@ -308,3 +308,51 @@ char* read_text_file(const char *filename) {
     fclose(fp);
     return content;
 }
+
+int findMinDistanceVertex(int* dist, bool* visited, int num_vertices) {
+    int min_dist = INT_MAX;
+    int min_index = -1;
+
+    for (int v = 0; v < num_vertices; v++) {
+        if (!visited[v] && dist[v] <= min_dist) {
+            min_dist = dist[v];
+            min_index = v;
+        }
+    }
+    return min_index;
+}
+
+void printPath(int* prev, int vertex) {
+    if (prev[vertex] == -1) {
+        printf("%d", vertex + 1); // Print the vertex (1-indexed)
+        return;
+    }
+    printPath(prev, prev[vertex]); // Recursive call to print the path
+    printf(" -> %d", vertex + 1); // Print current vertex (1-indexed)
+}
+
+void swapPQNodes(PQNode* a, PQNode* b) {
+    PQNode temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void add_encoded_path(PathSet* set, const char* path_str) {
+    for (int i = 0; i < set->size; i++) 
+        if (strcmp(set->entries[i], path_str) == 0) return; // Duplicate found, skip
+    
+    if (set->size == set->capacity) {
+        set->capacity = set->capacity ? set->capacity * 2 : 4;
+        set->entries = realloc(set->entries, set->capacity * sizeof(char*));
+    }
+    set->entries[set->size++] = strdup(path_str);
+}
+
+bool path_exists(PathSet* path_set, const char* path) {
+    for (int i = 0; i < path_set->size; i++) {
+        if (strcmp(path_set->entries[i], path) == 0) {
+            return true;
+        }
+    }
+    return false;
+}

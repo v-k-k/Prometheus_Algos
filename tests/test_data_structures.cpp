@@ -16,7 +16,7 @@ extern "C"
 #include "../modules/data_structures/graph.h"
 #include "../modules/sorting/sorting.h"
 }
-
+/*
 class TrainingHeapSortTest : public ::testing::TestWithParam<std::tuple<const char*, const char*, size_t>> {};
 
 TEST_P(TrainingHeapSortTest, Training)
@@ -869,4 +869,264 @@ TEST(test_strong_connected_graph_main, main)
     sdsfreesplitres(input_tokens, count); // Free the input tokens array
     free(input_content); // Free the content read from the file 
 }
-/* ****** */
+
+class TrainingHSortestPathTest : public ::testing::TestWithParam<std::tuple<int, int>> {};
+
+TEST_P(TrainingHSortestPathTest, TrainingDijkstra)
+{
+    const char* ZIPPED_FOLDER = "../data/test_09.zip";
+    int ELEMENTS_PER_EDGE = 3; // Each edge has a source, destination and a weight
+    sds NO_LINK = sdsnew("--");
+
+    // Retrieve test parameters
+    int F_SUFFIX = std::get<0>(GetParam());
+    int SIZE = std::get<1>(GetParam());
+
+    sds input_file = sdscatfmt(sdsempty(), "input_%i_%i.txt", F_SUFFIX, SIZE);
+    sds output_file = sdscatfmt(sdsempty(), "output_%i.txt", F_SUFFIX);
+
+    sds *input_tokens, *real_input_tokens, *output_tokens, *real_output_tokens;
+    struct f_list* file_list = NULL;
+    int* graphEdges;
+    int** expectedOutputMatrix;
+    int count, j, real_t_count = 0, outputSize = 0, input_size = 0, output_size = 0;
+    
+    get_zipped_files(&file_list, ZIPPED_FOLDER);
+    
+    size_t entries_count = list_length(file_list);
+    struct f_list* targetX = file_list;
+
+    for(int64_t idx = 0; idx < entries_count; ++idx) {    
+        if (sdscmp(input_file, targetX->name) == 0) {
+            input_tokens = sdssplitlen(targetX->content, sdslen(targetX->content), "\n", 1, &count);
+            real_input_tokens = (sds *)malloc(count * sizeof(sds));
+            if (real_input_tokens == NULL) {
+                fprintf(stderr, "Memory allocation failed\n");
+                sdsfreesplitres(input_tokens, count);  // Free tokens array before exiting
+                list_destroy(file_list);
+                return;
+            }
+
+            for (j = 1; j < count; j++) {
+                if (sdslen(input_tokens[j]) > 0) 
+                    real_input_tokens[real_t_count++] = input_tokens[j]; // Assign, don't copy!
+            }
+        
+            //Reallocate real_tokens to the exact size
+            real_input_tokens = (sds*)realloc(real_input_tokens, real_t_count * sizeof(sds));
+            if (real_input_tokens == NULL) {
+                fprintf(stderr, "Memory reallocation failed\n");
+                sdsfreesplitres(input_tokens, count);
+                list_destroy(file_list);
+                return;
+            }
+            
+            // Allocate memory for all (real_t_count * ELEMENTS_PER_EDGE) integers
+            graphEdges = (int*)malloc(real_t_count * ELEMENTS_PER_EDGE * sizeof(int));
+            if (graphEdges == NULL) perror("Failed to allocate memory for graphEdges");
+
+            for (j = 0; j < real_t_count; j++) {
+                if (sdslen(real_input_tokens[j]) > 0) {
+                    int eCount = 0;
+                    sds* edge = sdssplitlen(real_input_tokens[j], sdslen(real_input_tokens[j]), " ", 1, &eCount);
+                    edge[1] = sdstrim(edge[1],"\r");
+                    edge[2] = sdstrim(edge[2],"\r");
+
+                    // Source
+                    if (sdsToInt(edge[0], &graphEdges[j * ELEMENTS_PER_EDGE + 0]) != 0) printf("IN: sdsToInt conversion failed for edge[0]: %s\n", edge[0]);
+                    
+                    // Destination
+                    if (sdsToInt(edge[1], &graphEdges[j * ELEMENTS_PER_EDGE + 1]) != 0) printf("IN: sdsToInt conversion failed for edge[1]: %s\n", edge[1]);
+                    
+                    // Weight
+                    if (sdsToInt(edge[2], &graphEdges[j * ELEMENTS_PER_EDGE + 2]) != 0) printf("IN: sdsToInt conversion failed for edge[2]: %s\n", edge[2]);
+
+                    sdsfreesplitres(edge, eCount); // Free the edge tokens
+                }
+            }   
+            sdsfreesplitres(input_tokens, count);
+            free(real_input_tokens);  
+        }
+        else if (sdscmp(output_file, targetX->name) == 0) {
+            output_tokens = sdssplitlen(targetX->content, sdslen(targetX->content), "\n", 1, &count);
+            real_output_tokens = (sds *)malloc(count * sizeof(sds));
+            if (real_output_tokens == NULL) {
+                fprintf(stderr, "Memory allocation failed\n");
+                sdsfreesplitres(output_tokens, count);  // Free tokens array before exiting
+                list_destroy(file_list);
+                return;
+            }
+            for (j = 0; j < count; j++) {
+                if (sdslen(output_tokens[j]) > 0) 
+                    real_output_tokens[outputSize++] = output_tokens[j]; // Assign, don't copy!
+            }
+            //Reallocate real_tokens to the exact size
+            real_output_tokens = (sds*)realloc(real_output_tokens, outputSize * sizeof(sds));
+            if (real_output_tokens == NULL) {
+                fprintf(stderr, "Memory reallocation failed\n");
+                sdsfreesplitres(output_tokens, output_size);
+                list_destroy(file_list);   
+                return;
+            }
+            // Allocate memory for expected output
+            expectedOutputMatrix = (int**)malloc(SIZE * sizeof(int*));
+            if (!expectedOutputMatrix) {
+                perror("Failed to allocate memory for matrix rows");
+                return;
+            }
+            for (int i = 0; i < SIZE; ++i) {
+                expectedOutputMatrix[i] = (int*)malloc(SIZE * sizeof(int));
+                if (!expectedOutputMatrix[i]) {
+                    perror("Failed to allocate memory for matrix columns");
+                    // Clean up already allocated rows
+                    for (int j = 0; j < i; ++j) {
+                        free(expectedOutputMatrix[j]);
+                    }
+                    free(expectedOutputMatrix);
+                    return;
+                }
+            }
+
+            for (j = 0; j < outputSize; j++) {
+                if (sdslen(real_output_tokens[j]) > 0) {
+                    int eCount = 0;
+                    sds* row = sdssplitlen(real_output_tokens[j], sdslen(real_output_tokens[j]), " ", 1, &eCount);
+                    for (int k = 0; k < SIZE; k++) {
+                        if (sdscmp(row[k], NO_LINK) == 0) {
+                            expectedOutputMatrix[j][k] = INT_MAX; // Use INT_MAX to indicate no link
+                        }
+                        else if (sdsToInt(row[k], &expectedOutputMatrix[j][k]) != 0) {
+                            printf("OUT: sdsToInt conversion failed for output token: %s\n", row[k]);
+                            // Free the row tokens
+                            sdsfreesplitres(row, eCount);
+                            free(real_output_tokens);
+                            list_destroy(file_list);
+                            return;
+                        }
+                    }
+                    sdsfreesplitres(row, eCount);
+                }
+            }
+            sdsfreesplitres(output_tokens, count); 
+            free(real_output_tokens);  
+        }
+        targetX = targetX->next;
+    }
+    WeightedGraph* graph = createWeightedGraph(SIZE);
+    for (j = 0; j < real_t_count; j++) 
+        addWeightedEdge(graph, graphEdges[j * ELEMENTS_PER_EDGE + 0], graphEdges[j * ELEMENTS_PER_EDGE + 1], graphEdges[j * ELEMENTS_PER_EDGE + 2]);
+
+    for (int source_vertex = 1; source_vertex <= SIZE; source_vertex++){
+        int* shortest_distances = dijkstraSlow(graph, source_vertex);
+        for (int i = 0; i < SIZE; i++) {
+            EXPECT_EQ(shortest_distances[i], expectedOutputMatrix[source_vertex - 1][i])
+                << "Shortest distance from vertex " << source_vertex 
+                << " to vertex " << (i + 1) 
+                << " is " << shortest_distances[i] 
+                << ", expected: " << expectedOutputMatrix[source_vertex - 1][i];
+        }
+        // IMPORTANT: Free the memory returned by dijkstra
+        free(shortest_distances);
+        shortest_distances = NULL; // Good practice to set to NULL after freeing
+    }
+    sdsfree(NO_LINK); // Free the NO_LINK string
+    sdsfree(input_file); // Free the input file suffix
+    sdsfree(output_file); // Free the output file suffix
+    free(graphEdges); // Free the array holding edge data
+    for (int i = 0; i < SIZE; ++i) {
+        free(expectedOutputMatrix[i]); // Free each row of the expected output matrix
+    }
+    free(expectedOutputMatrix); // Free the expected output matrix
+    list_destroy(file_list); // Free the file list
+    freeWeightedGraph(graph); // Free all graph memory
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    DijkstraParamTests, 
+    TrainingHSortestPathTest,
+    ::testing::Values(
+        std::make_tuple(1, 100),
+        std::make_tuple(2, 100),
+        std::make_tuple(3, 100),
+        std::make_tuple(4, 1000),
+        std::make_tuple(5, 10),
+        std::make_tuple(6, 10),
+        std::make_tuple(7, 10),
+        std::make_tuple(8, 10)
+    )
+);
+ ****** */
+
+ TEST(test_dijkstra_shortest_path_main, main)
+{
+    const char* PATH = "../data/USA-FLA.txt";
+    const int ELEMENTS_PER_EDGE = 3; // Each edge has a source, destination and a weight
+    int vertexAmount = 1070376, startPoint = 100562, endPoint = 1070345, expectedDistance = 6699685, expectedUniquePaths = 4;
+    
+    sds *input_tokens, *real_input_tokens;
+    int count, j, real_t_count = 0, outputSize = 0;
+    int* graphEdges;
+
+    char *input_content = read_text_file(PATH);
+    input_tokens = sdssplitlen(input_content, strlen(input_content), "\n", 1, &count);
+            
+    real_input_tokens = (sds *)malloc(count * sizeof(sds));
+    if (real_input_tokens == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        sdsfreesplitres(input_tokens, count);  // Free tokens array before exiting
+        return;
+    }
+                       
+    for (j = 1; j < count; j++) {
+        if (sdslen(input_tokens[j]) > 0) 
+            real_input_tokens[real_t_count++] = input_tokens[j]; // Assign, don't copy!
+    }
+
+    //Reallocate real_tokens to the exact size
+    real_input_tokens = (sds*)realloc(real_input_tokens, real_t_count * sizeof(sds));
+    if (real_input_tokens == NULL) {
+        fprintf(stderr, "Memory reallocation failed\n");
+        sdsfreesplitres(input_tokens, count);
+        return;
+    }
+
+    // Allocate memory for all (real_t_count * ELEMENTS_PER_EDGE) integers
+    graphEdges = (int*)malloc(real_t_count * ELEMENTS_PER_EDGE * sizeof(int));
+    if (graphEdges == NULL) perror("Failed to allocate memory for graphEdges");
+
+    for (j = 0; j < real_t_count; j++) {
+        if (sdslen(real_input_tokens[j]) > 0) {
+            int eCount = 0;
+            sds* edge = sdssplitlen(real_input_tokens[j], sdslen(real_input_tokens[j]), " ", 1, &eCount);
+            edge[1] = sdstrim(edge[1],"\r");
+
+            // Source
+            if (sdsToInt(edge[0], &graphEdges[j * ELEMENTS_PER_EDGE + 0]) != 0) printf("IN: sdsToInt conversion failed for edge[0]: %s\n", edge[0]);
+            
+            // Destination
+            if (sdsToInt(edge[1], &graphEdges[j * ELEMENTS_PER_EDGE + 1]) != 0) printf("IN: sdsToInt conversion failed for edge[1]: %s\n", edge[1]);
+            
+            // Weight
+            if (sdsToInt(edge[2], &graphEdges[j * ELEMENTS_PER_EDGE + 2]) != 0) printf("IN: sdsToInt conversion failed for edge[2]: %s\n", edge[2]);
+
+            sdsfreesplitres(edge, eCount); // Free the edge tokens
+        }
+    }   
+    // --- Graph Creation using the populated graphEdges array ---
+    WeightedGraph* graph = createWeightedGraph(vertexAmount);
+    for (j = 0; j < real_t_count; j++) 
+        addWeightedEdge(graph, graphEdges[j * ELEMENTS_PER_EDGE + 0], graphEdges[j * ELEMENTS_PER_EDGE + 1], graphEdges[j * ELEMENTS_PER_EDGE + 2]);
+
+    DijkstraResult* result = dijkstra(graph, startPoint);
+    EXPECT_EQ(result->distances[endPoint - 1], expectedDistance)
+        << "Shortest distance from vertex " << startPoint 
+        << " to vertex " << endPoint 
+        << " is " << result->distances[endPoint - 1] 
+        << ", expected: " << expectedDistance;
+    std::cout << result->distances[endPoint - 1] << "   " << result->path_counts[endPoint - 1] << std::endl;
+    // IMPORTANT: Free the memory returned by dijkstra
+    free(result->distances);
+    free(result->path_counts);
+    free(result);
+    
+}

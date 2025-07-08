@@ -3,6 +3,48 @@
 
 #include "simple_dynamic_string/sds.h"
 
+// Helper structure to represent a dynamic set of paths per vertex
+typedef struct PathSet {
+    char** entries;
+    int size;
+    int capacity;
+} PathSet;
+
+// Structure to return results of optimized Dijkstra's algorithm
+// Contains distances from the source to each vertex and the number of paths to each vertex.
+typedef struct {
+    int* distances;
+    int* path_counts;
+    // int* predecessors; // If you need to reconstruct *a* path, include prev here
+} DijkstraResult;
+
+// Node to store in the priority queue (vertex and its distance)
+typedef struct {
+    int vertex;
+    int distance;
+} PQNode;
+
+// Min-Priority Queue structure (using a binary heap)
+typedef struct {
+    PQNode* heap;      // Array to store heap elements
+    int* pos;          // Position of vertex in heap (for decrease_key)
+    int capacity;      // Maximum capacity of the heap
+    int size;          // Current number of elements in the heap
+} MinPriorityQueue;
+
+// Structure to represent an edge in the adjacency list
+typedef struct WeightedAdjUNode {
+    int dest;          // Destination vertex
+    int weight;        // Weight of the edge
+    struct WeightedAdjUNode* next; // Pointer to the next edge in the list
+} WeightedAdjUNode;
+
+// Structure to represent the graph
+typedef struct WeightedGraph {
+    int num_vertices;      // Number of vertices in the graph
+    WeightedAdjUNode** adj_lists;  // Array of pointers to EdgeNodes (adjacency lists)
+} WeightedGraph;
+
 // Structure for a node in the adjacency list (unchanged from prior, but included for context)
 struct AdjUNode {
     int dest;

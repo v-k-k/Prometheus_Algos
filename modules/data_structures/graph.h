@@ -2,6 +2,7 @@
 #define GRAPH_H
 
 #include "../../helpers/tools/utils.h"
+#include "min_pq.h"
 
 // Function to create a graph with V vertices (MODIFIED to initialize new fields)
 struct Graph* createGraph(int numVertices);
@@ -54,5 +55,30 @@ int* countStrongConnectedComponentsSize(struct Graph* originalGraph, int* numCom
 
 // Function to free graph memory (MODIFIED to free new fields)
 void freeGraph(struct Graph* graph);
+
+// Function to create a new graph with 'num_vertices'
+WeightedGraph* createWeightedGraph(int num_vertices);
+
+// Function to add an edge to the graph (for a directed graph)
+void addWeightedEdge(WeightedGraph* graph, int src, int dest, int weight);
+
+// Function to free the memory allocated for the graph
+void freeWeightedGraph(WeightedGraph* graph);
+
+// Non optimized Dijkstra's algorithm implementation
+// Returns a dynamically allocated array of shortest distances from the source.
+// The caller is responsible for freeing the returned array.
+int* dijkstraSlow(WeightedGraph* graph, int source);
+
+// Fast Dijkstra's algorithm implementation
+// Returns a dynamically allocated array of DijkstraResult`s contains shortest distances from the source and the number of unique paths to each vertex.
+// The distances are stored in the `distances` field, and the number of unique paths
+// to each vertex is stored in the `path_counts` field.
+// The `predecessors` field is not returned directly in this version, but can be
+// used internally if needed for path reconstruction.
+// The distances are 0-indexed, so the distance to vertex `i` is stored in `distances[i]`.
+// The path counts are also 0-indexed, so the number of unique paths to vertex `i` is stored in `path_counts[i]`.
+// The caller is responsible for freeing the returned array.
+DijkstraResult* dijkstra(WeightedGraph* graph, int source);
 
 #endif

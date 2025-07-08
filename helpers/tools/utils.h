@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
+#include <limits.h>
 #include "../structs.h"
 
 void swap(int* a, int* b);
@@ -43,5 +45,21 @@ int compareInts(const void *a, const void *b);
 
 // Helper function to read the text file
 char* read_text_file(const char *filename);
+
+// Function to find the vertex with the minimum distance value,
+// from the set of vertices not yet included in the shortest path tree.
+int findMinDistanceVertex(int* dist, bool* visited, int num_vertices);
+
+// Function to print the shortest path from source to a target vertex
+void printPath(int* prev, int current_vertex);
+
+// Helper function to swap two PQNodes
+void swapPQNodes(PQNode* a, PQNode* b);
+
+// Helper function to track the unique path`s in optimized Dijkstra's algorithm
+void add_encoded_path(PathSet* set, const char* path_str);
+
+// Function to check if a path already exists in the PathSet
+bool path_exists(PathSet* path_set, const char* path);
 
 #endif

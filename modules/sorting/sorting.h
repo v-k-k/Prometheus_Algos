@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <limits.h>
 #include "../../helpers/simple_dynamic_string/sds.h"
 #include "../../helpers/tools/utils.h"
 
