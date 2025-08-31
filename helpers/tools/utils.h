@@ -1,11 +1,17 @@
 #ifndef UTILS_H
 #define UTILS_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
 #include <limits.h>
 #include "../structs.h"
+
+static int* global_distances = NULL;
+static int global_distances_size = 0;
+
+int compare_by_distance(const void* a, const void* b);
 
 void swap(int* a, int* b);
 

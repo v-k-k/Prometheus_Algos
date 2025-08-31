@@ -16,7 +16,7 @@ extern "C"
 #include "../modules/data_structures/graph.h"
 #include "../modules/sorting/sorting.h"
 }
-/*
+/* ****** */
 class TrainingHeapSortTest : public ::testing::TestWithParam<std::tuple<const char*, const char*, size_t>> {};
 
 TEST_P(TrainingHeapSortTest, Training)
@@ -1055,7 +1055,6 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple(8, 10)
     )
 );
- ****** */
 
  TEST(test_dijkstra_shortest_path_main, main)
 {
@@ -1069,6 +1068,7 @@ INSTANTIATE_TEST_SUITE_P(
 
     char *input_content = read_text_file(PATH);
     input_tokens = sdssplitlen(input_content, strlen(input_content), "\n", 1, &count);
+    free(input_content); // Free the content read from the file
             
     real_input_tokens = (sds *)malloc(count * sizeof(sds));
     if (real_input_tokens == NULL) {
@@ -1111,22 +1111,34 @@ INSTANTIATE_TEST_SUITE_P(
 
             sdsfreesplitres(edge, eCount); // Free the edge tokens
         }
-    }   
+    }
     // --- Graph Creation using the populated graphEdges array ---
     WeightedGraph* graph = createWeightedGraph(vertexAmount);
     for (j = 0; j < real_t_count; j++) 
-        addWeightedEdge(graph, graphEdges[j * ELEMENTS_PER_EDGE + 0], graphEdges[j * ELEMENTS_PER_EDGE + 1], graphEdges[j * ELEMENTS_PER_EDGE + 2]);
+        addWeightedEdgeUnique(graph, graphEdges[j * ELEMENTS_PER_EDGE + 0], graphEdges[j * ELEMENTS_PER_EDGE + 1], graphEdges[j * ELEMENTS_PER_EDGE + 2]);
 
-    DijkstraResult* result = dijkstra(graph, startPoint);
+    DijkstraResult* result = dijkstraOptimized(graph, startPoint);
+    ASSERT_NE(result, nullptr) << "dijkstraС returned NULL for a valid graph and start point.";
+
     EXPECT_EQ(result->distances[endPoint - 1], expectedDistance)
         << "Shortest distance from vertex " << startPoint 
         << " to vertex " << endPoint 
         << " is " << result->distances[endPoint - 1] 
         << ", expected: " << expectedDistance;
-    std::cout << result->distances[endPoint - 1] << "   " << result->path_counts[endPoint - 1] << std::endl;
+
+    EXPECT_EQ(result->path_counts[endPoint - 1], expectedUniquePaths)
+        << "Number of unique shortest paths from vertex " << startPoint 
+        << " to vertex " << endPoint 
+        << " is " << result->path_counts[endPoint - 1] 
+        << ", expected: " << expectedUniquePaths;
+
+    free(graphEdges); // Free the array holding edge data
+    free(real_input_tokens); // Free the array holding input tokens
+    sdsfreesplitres(input_tokens, count); // Free the input tokens array
+    freeWeightedGraph(graph); // Free all graph memory
+
     // IMPORTANT: Free the memory returned by dijkstra
     free(result->distances);
     free(result->path_counts);
     free(result);
-    
 }

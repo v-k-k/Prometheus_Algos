@@ -62,6 +62,9 @@ WeightedGraph* createWeightedGraph(int num_vertices);
 // Function to add an edge to the graph (for a directed graph)
 void addWeightedEdge(WeightedGraph* graph, int src, int dest, int weight);
 
+// Function to add an edge to the graph (for a directed graph)
+void addWeightedEdgeUnique(WeightedGraph* graph, int src, int dest, int weight);
+
 // Function to free the memory allocated for the graph
 void freeWeightedGraph(WeightedGraph* graph);
 
@@ -79,6 +82,6 @@ int* dijkstraSlow(WeightedGraph* graph, int source);
 // The distances are 0-indexed, so the distance to vertex `i` is stored in `distances[i]`.
 // The path counts are also 0-indexed, so the number of unique paths to vertex `i` is stored in `path_counts[i]`.
 // The caller is responsible for freeing the returned array.
-DijkstraResult* dijkstra(WeightedGraph* graph, int source);
+DijkstraResult* dijkstraOptimized(WeightedGraph* graph, int source) ;
 
 #endif

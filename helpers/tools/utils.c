@@ -7,6 +7,16 @@ void swap(int* a, int* b) {
     *b = temp;
 }
 
+int compare_by_distance(const void* a, const void* b) {
+    int u = *(const int*)a;
+    int v = *(const int*)b;
+    if (!global_distances || u < 0 || v < 0 || 
+        u >= global_distances_size || v >= global_distances_size) {
+        return 0;
+    }
+    return global_distances[u] - global_distances[v];
+}
+
 void appendToPositiveIntArray(int* a, int n, int value) {
     for (int i = 0; i < n; i++) {
         if (a[i] == -1) { // Assuming -1 is used as a placeholder for empty slots

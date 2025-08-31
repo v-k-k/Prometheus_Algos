@@ -1,5 +1,18 @@
 #include "graph.h"
 
+// Checks whether the adjacency list graph->adj_lists[src] already contains an edge src→dst with weight weight
+bool edge_exists(WeightedGraph* graph,
+                 int src,    // 0-index
+                 int dst,    // 0-index
+                 int weight)
+{
+    for (WeightedAdjUNode* e = graph->adj_lists[src]; e; e = e->next) {
+        if (e->dest == dst && e->weight == weight)
+            return 1;
+    }
+    return 0;
+}
+
 struct Graph* createGraph(int numVertices) {
     struct Graph* graph = (struct Graph*)malloc(sizeof(struct Graph));
     if (graph == NULL) {
@@ -312,6 +325,53 @@ void addWeightedEdge(WeightedGraph* graph, int src, int dest, int weight) {
     graph->adj_lists[adjusted_dest] = reverse_node;*/
 }
 
+void addWeightedEdgeUnique(WeightedGraph* graph,
+                     int src,
+                     int dest,
+                     int weight)
+{
+    // Switch to 0-index
+    int u = src  - 1;
+    int v = dest - 1;
+
+    // Index validity check
+    if (u < 0 || u >= graph->num_vertices ||
+        v < 0 || v >= graph->num_vertices) {
+        fprintf(stderr,
+                "Error: Vertex index out of bounds. "
+                "num_vertices=%d, src=%d, dest=%d\n",
+                graph->num_vertices, src, dest);
+        exit(EXIT_FAILURE);
+    }
+
+    // If the edge already exists — do nothing
+    if (!edge_exists(graph, u, v, weight)) {
+        // insert edge u → v
+        WeightedAdjUNode* node = malloc(sizeof(WeightedAdjUNode));
+        if (!node) {
+            perror("Failed to allocate new edge node");
+            exit(EXIT_FAILURE);
+        }
+        node->dest   = v;
+        node->weight = weight;
+        node->next   = graph->adj_lists[u];
+        graph->adj_lists[u] = node;
+    }
+
+    // For an undirected graph, also add v → u if it doesn't already exist
+    if (!edge_exists(graph, v, u, weight)) {
+        WeightedAdjUNode* rev = malloc(sizeof(WeightedAdjUNode));
+        if (!rev) {
+            perror("Failed to allocate reverse edge node");
+            exit(EXIT_FAILURE);
+        }
+        rev->dest   = u;
+        rev->weight = weight;
+        rev->next   = graph->adj_lists[v];
+        graph->adj_lists[v] = rev;
+    }
+}
+
 void freeWeightedGraph(WeightedGraph* graph) {
     for (int i = 0; i < graph->num_vertices; i++) {
         WeightedAdjUNode* current = graph->adj_lists[i];
@@ -394,15 +454,10 @@ int* dijkstraSlow(WeightedGraph* graph, int source) {
     // Return the distances array. Caller is responsible for freeing it.
     return dist;
 }
-/*
-DijkstraResult* dijkstra(WeightedGraph* graph, int source) {
-    int num_vertices = graph->num_vertices;
-    int adjusted_source = source - 1;
 
-    if (adjusted_source < 0 || adjusted_source >= num_vertices) {
-        fprintf(stderr, "Error: Source vertex %d is out of bounds (1 to %d).\n", source, num_vertices);
-        exit(EXIT_FAILURE);
-    }
+DijkstraResult* dijkstraOptimized(WeightedGraph* graph, int source) {
+    int num_vertices      = graph->num_vertices;
+    int adjusted_source   = source - 1;
 
     // Allocate result structure
     DijkstraResult* result = (DijkstraResult*)malloc(sizeof(DijkstraResult));
@@ -412,269 +467,62 @@ DijkstraResult* dijkstra(WeightedGraph* graph, int source) {
     }
 
     // Allocate arrays for distances and path counts
-    result->distances = (int*)malloc(num_vertices * sizeof(int));
-    result->path_counts = (int*)malloc(num_vertices * sizeof(int));
-    int* prev = (int*)malloc(num_vertices * sizeof(int)); // prev is still useful but not returned directly for this request
+    result->distances       = malloc(num_vertices * sizeof(int));
+    result->path_counts     = malloc(num_vertices * sizeof(int));
+    bool* finalized         = calloc(num_vertices, sizeof(bool));
 
-    if (!result->distances || !result->path_counts || !prev) {
-        perror("Failed to allocate memory for Dijkstra arrays");
-        free(result->distances);
-        free(result->path_counts);
-        free(prev);
-        free(result);
-        exit(EXIT_FAILURE);
-    }
-
-    // Initialize arrays
     for (int i = 0; i < num_vertices; i++) {
-        result->distances[i] = INT_MAX;
-        result->path_counts[i] = 0; // Initialize path counts to 0
-        prev[i] = -1;
-    }
-
-    // Distance from source to itself is 0, and there's 1 way to reach it
-    result->distances[adjusted_source] = 0;
-    result->path_counts[adjusted_source] = 1;
-    
-    // PathSets to track unique paths per vertex
-    PathSet* path_sets = calloc(num_vertices, sizeof(PathSet));
-    add_encoded_path(&path_sets[adjusted_source], ""); // base path
-
-    // Create and initialize the min-priority queue
-    MinPriorityQueue* pq = init_pq(num_vertices);
-    insert_pq(pq, adjusted_source, 0);
-
-    while (!is_empty_pq(pq)) {
-        PQNode current_node = extract_min_pq(pq);
-        int u = current_node.vertex;
-        //int d_u = current_node.distance;
-
-        // If we've already found a shorter path to 'u', skip this entry
-        //if (d_u > result->distances[u]) continue;
-
-        WeightedAdjUNode* current_edge = graph->adj_lists[u];*/
-        /*while (current_edge != NULL) {
-            int v = current_edge->dest;
-            int weight = current_edge->weight;
-            long long new_dist = (long long)result->distances[u] + weight;
-
-            if (result->distances[u] != INT_MAX && new_dist <= result->distances[v]) {
-                if (new_dist < result->distances[v]) {
-                    result->distances[v] = new_dist;
-                    result->path_counts[v] = 0;
-
-                    for (int i = 0; i < path_sets[v].size; i++)
-                        free(path_sets[v].entries[i]);
-                    free(path_sets[v].entries);
-                    path_sets[v].entries = NULL;
-                    path_sets[v].size = 0;
-                    path_sets[v].capacity = 0;
-                }
-
-                for (int i = 0; i < path_sets[u].size; i++) {
-                    char buffer[1024];
-                    if (u != adjusted_source)
-                        snprintf(buffer, sizeof(buffer), "%s,%d", path_sets[u].entries[i], u);
-                    else
-                        snprintf(buffer, sizeof(buffer), "%d", u);
-
-                    add_encoded_path(&path_sets[v], buffer);
-                }
-
-                result->path_counts[v] = path_sets[v].size;
-
-                if (pq->pos[v] == -1)
-                    insert_pq(pq, v, result->distances[v]);
-                else
-                    decrease_key_pq(pq, v, result->distances[v]);
-            }
-            current_edge = current_edge->next;
-        }*//*
-        while (current_edge != NULL) {
-            int v = current_edge->dest;
-            int weight = current_edge->weight;
-
-            long long new_dist = (long long)result->distances[u] + weight;
-
-            if (result->distances[u] != INT_MAX) {
-                if (new_dist < result->distances[v]) {
-                    result->distances[v] = new_dist;
-
-                    // Clear previous internal paths
-                    for (int i = 0; i < path_sets[v].size; i++)
-                        free(path_sets[v].entries[i]);
-                    free(path_sets[v].entries);
-                    path_sets[v].entries = NULL;
-                    path_sets[v].size = 0;
-                    path_sets[v].capacity = 0;
-
-                    // Add new internal path variants from u
-                    char buffer[1024];
-                    for (int i = 0; i < path_sets[u].size; i++) {
-                        if (u == adjusted_source) {
-                            snprintf(buffer, sizeof(buffer), "%d", u);
-                        } else {
-                            const char* prev_path = path_sets[u].entries[i];
-                            snprintf(buffer, sizeof(buffer), "%s%s%d",
-                                    strlen(prev_path) > 0 ? prev_path : "",
-                                    strlen(prev_path) > 0 ? "," : "",
-                                    u);
-                        }
-
-                        // Only add the path if it's unique
-                        if (!path_exists(&path_sets[v], buffer)) {
-                            add_encoded_path(&path_sets[v], buffer);
-                        }
-                    }
-
-                    result->path_counts[v] = path_sets[v].size;
-
-                    if (pq->pos[v] == -1)
-                        insert_pq(pq, v, result->distances[v]);
-                    else
-                        decrease_key_pq(pq, v, result->distances[v]);
-                }
-                else if (new_dist == result->distances[v]) {
-                    char buffer[1024];
-                    for (int i = 0; i < path_sets[u].size; i++) {
-                        if (u == adjusted_source) {
-                            snprintf(buffer, sizeof(buffer), "%d", u);
-                        } else {
-                            const char* prev_path = path_sets[u].entries[i];
-                            snprintf(buffer, sizeof(buffer), "%s%s%d",
-                                    strlen(prev_path) > 0 ? prev_path : "",
-                                    strlen(prev_path) > 0 ? "," : "",
-                                    u);
-                        }
-
-                        // Only add the path if it's unique
-                        if (!path_exists(&path_sets[v], buffer)) {
-                            add_encoded_path(&path_sets[v], buffer);
-                        }
-                    }
-                    result->path_counts[v] = path_sets[v].size;
-                }
-            }
-            current_edge = current_edge->next;
-        }
-    }*/
-/*
-    // === Cleanup ===
-    for (int i = 0; i < num_vertices; i++) {
-        for (int j = 0; j < path_sets[i].size; j++)
-            free(path_sets[i].entries[j]);
-        free(path_sets[i].entries);
-    }
-
-            // Case 1: Found a strictly shorter path to v
-            if (result->distances[u] != INT_MAX && new_dist < result->distances[v]) {
-                result->distances[v] = new_dist;
-                prev[v] = u; // Update predecessor
-                result->path_counts[v] = result->path_counts[u]; // New path count is solely from u
-
-                // Add or update 'v' in the priority queue
-                if (pq->pos[v] == -1) { // If vertex v is not yet in the PQ
-                    insert_pq(pq, v, result->distances[v]);
-                } else { // If vertex v is already in the PQ, update its key
-                    decrease_key_pq(pq, v, result->distances[v]);
-                }
-            }
-            // Case 2: Found an equally short path to v
-            else if (result->distances[u] != INT_MAX && new_dist == result->distances[v]) {
-                // We found another shortest path to v with the same length.
-                // Add the count of paths to u to v's count.
-                result->path_counts[v] += result->path_counts[u];
-                // No need to update PQ or predecessor, as distance hasn't improved.
-            }
-            current_edge = current_edge->next;
-        }
-    }*/
-
-    // Clean up temporary allocated memory (prev and the priority queue)
-    /*for (int i = 0; i < num_vertices; i++) {
-        for (int j = 0; j < path_sets[i].size; j++)
-            free(path_sets[i].entries[j]);
-        free(path_sets[i].entries);
-    }
-    free(path_sets);
-    free(prev);
-    free_pq(pq);
-printf("Dijkstra's algorithm completed successfully.\n");
-    // Return the DijkstraResult structure. Caller is responsible for freeing its contents.
-    return result;
-}*/
-DijkstraResult* dijkstra(WeightedGraph* graph, int source) {
-    int num_vertices = graph->num_vertices;
-    int adjusted_source = source - 1;  // Adjust for 0-based indexing
-
-    // Allocate result structure
-    DijkstraResult* result = (DijkstraResult*)malloc(sizeof(DijkstraResult));
-    if (!result) {
-        perror("Failed to allocate DijkstraResult");
-        exit(EXIT_FAILURE);
-    }
-
-    // Allocate arrays for distances and path counts
-    result->distances = (int*)malloc(num_vertices * sizeof(int));
-    result->path_counts = (int*)malloc(num_vertices * sizeof(int));
-
-    // Initialize distances and path counts
-    for (int i = 0; i < num_vertices; i++) {
-        result->distances[i] = INT_MAX;
+        result->distances[i]   = INT_MAX;
         result->path_counts[i] = 0;
     }
 
     // Distance from source to itself is 0, and there's 1 way to reach it
-    result->distances[adjusted_source] = 0;
+    result->distances[adjusted_source]   = 0;
     result->path_counts[adjusted_source] = 1;
 
     // Initialize the priority queue
     MinPriorityQueue* pq = init_pq(num_vertices);
     insert_pq(pq, adjusted_source, 0);
 
-    while (pq->size > 0) {
-        PQNode current_node = extract_min_pq(pq);
-        int u = current_node.vertex;
-        WeightedAdjUNode* current_edge = graph->adj_lists[u];
+    while (!is_empty_pq(pq)) {
+        PQNode current = extract_min_pq(pq);
+        int u          = current.vertex;
+        int d          = current.distance;
 
-        while (current_edge != NULL) {
-            int v = current_edge->dest;
-            int weight = current_edge->weight;
-            int new_dist = result->distances[u] + weight;
+        if (finalized[u] || d != result->distances[u])
+            continue;
+
+        finalized[u] = true;
+
+        for (WeightedAdjUNode* edge = graph->adj_lists[u]; edge; edge = edge->next) {
+            int v  = edge->dest;    // siblingVertex
+            int w  = edge->weight;  // weight
+            int nd = d + w;         // new_dist
 
             // Relax the edge (u, v)
-            if (new_dist < result->distances[v]) {
-                // Found a shorter path to v
-                result->distances[v] = new_dist;
-                result->path_counts[v] = result->path_counts[u];  // Path count from u
+            if (nd < result->distances[v]) {
+                // Found a shorter path to `v`
+                result->distances[v]   = nd;
+                result->path_counts[v] = result->path_counts[u];
 
-                // Insert v into priority queue
-                insert_pq(pq, v, new_dist);
-            } else if (new_dist == result->distances[v]) {
-                // Found another shortest path of the same length to v
-                result->path_counts[v] += result->path_counts[u];  // Add path count from u
-
-                // If v is not in the priority queue, insert it
-                if (pq->pos[v] == -1) {
-                    insert_pq(pq, v, new_dist);
-                } else {
-                    decrease_key_pq(pq, v, new_dist); // Update distance in priority queue
+                if (!finalized[v]) {
+                    // Insert if `v` (siblingVertex) not already in the queue; otherwise, decrease its key
+                    if (pq->pos[v] == -1)
+                        insert_pq(pq, v, nd);
+                    else
+                        decrease_key_pq(pq, v, nd);
                 }
             }
-
-            current_edge = current_edge->next;
+            else if (nd == result->distances[v] && !finalized[v]) {
+                // Found another shortest path of the same length to `v`
+                result->path_counts[v] += result->path_counts[u];
+            }
         }
     }
-
-    // Only print the final result for the target vertex
-    int target_vertex = 1070345 - 1; // Adjust for 0-based index
-    if (target_vertex < num_vertices) {
-        printf("\nFinal result for target vertex %d: Distance = %d, Path Count = %d\n", 
-               target_vertex + 1, result->distances[target_vertex], result->path_counts[target_vertex]);
-    }
-
     // Clean up the priority queue memory
     free_pq(pq);
+    free(finalized);
 
+    // Return the DijkstraResult structure. Caller is responsible for freeing its contents.
     return result;
 }
